@@ -557,11 +557,16 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .half-row > .fld{margin-bottom:13px}
 .half-row > .fld label{white-space:normal}
 /* 추천 공급업체 — 칸 안 오른쪽 검색 아이콘(콤보박스 모양) + BP-Master 「BP 검색」 과 같은 창. 은행 · 계좌는 표시 안 함 */
-.sup-wrap{position:relative}
-.sup-wrap input{padding-right:38px}
-.sup-ico{position:absolute;top:0;right:0;bottom:0;width:36px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:#8a8886;cursor:pointer;border-radius:0 4px 4px 0;padding:0}
-.sup-ico:hover,.sup-ico:focus-visible{color:#0078d4;background:#f0f6ff;outline:none}
-.sup-ico:disabled{color:#c8c6c4;cursor:not-allowed;background:none}
+/* 공급업체 라벨 줄 — 라벨 바로 오른쪽에 「BP Master 검색」 알약(10-15). 좁으면 라벨 아래로 내려간다 */
+.lbl-row{display:flex;flex-wrap:wrap;align-items:center;column-gap:10px;row-gap:5px;margin-bottom:6px}
+.lbl-row > label{margin-bottom:0}
+.bpm-pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 10px 0 8px;border:1px solid #c7e0f4;border-radius:999px;background:#f0f6ff;color:#0b5fa5;
+  font-size:11.5px;font-weight:600;font-family:inherit;line-height:1;letter-spacing:-.1px;cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s,color .12s,box-shadow .12s}
+.bpm-pill svg{flex:none;width:14px;height:14px}
+.bpm-pill:hover{background:#e1effb;border-color:#8cbde8;color:#005a9e}
+.bpm-pill:active{background:#d3e7f8}
+.bpm-pill:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(0,120,212,.28);border-color:#0078d4}
+.bpm-pill:disabled{background:#f3f2f1;border-color:#e1dfdd;color:#a19f9d;cursor:not-allowed}
 .sup-src{font-size:.7rem;color:#8a8886;margin-top:4px;min-height:1em;line-height:1.5}
 .sup-src .k{color:#0b5fa5;background:#e1f0ff;border-radius:9px;padding:0 7px;font-weight:600;font-size:10px;margin-right:2px}
 .sup-src .m{color:#8a8886;background:#f3f2f1;border-radius:9px;padding:0 7px;font-size:10px;margin-right:2px}
@@ -586,8 +591,8 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .bp-empty{text-align:center;padding:20px;color:#a19f9d;font-size:.8rem}
 .bp-foot{font-size:11px;color:#a19f9d;margin-top:8px}
 /* 폼 입력 높이 통일 — 날짜 칸(달력 단추 때문에 더 높던 것)을 한 줄 글자 칸과 같은 높이로(작성일 · 신청자 줄, 날짜 · 리드타임 줄, 공급업체 칸) */
-.pform .fld > input[type=text],.pform .fld > input[type=date],.pform .sup-wrap > input{height:34px;line-height:normal;box-sizing:border-box}
-@media screen and (max-width:767px){.pform .fld > input[type=text],.pform .fld > input[type=date],.pform .sup-wrap > input{height:40px;min-height:0}}
+.pform .fld > input[type=text],.pform .fld > input[type=date]{height:34px;line-height:normal;box-sizing:border-box}
+@media screen and (max-width:767px){.pform .fld > input[type=text],.pform .fld > input[type=date]{height:40px;min-height:0}}
 @media (max-width:900px){.money-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 
 /* ── 공식 양식 PDF 쪽(화면 밖에서만 그린다 · #pdf-host) — 원본 「NPM Procurement: Single Source Letter of Justification · Valid as of 04/2022」 배치 ──
@@ -1078,7 +1083,7 @@ const PROC_TYPES = {
       { key: 'desc',     col: 'Description',         type: 'textarea', req: true,  max: 1000,
         en: 'Description of product or service (specification, quantity,)', ko: '품목 · 서비스 내용', ph: '예: 2026 Concur service fee (사양 · 수량 포함)' },
       { key: 'supplier', col: 'RecommendedSupplier', type: 'text',     req: true,  max: 200,
-        en: 'Recommended Supplier', ko: '추천 공급업체', picker: 'bp', ph: '클릭해 BP 검색 · 목록에 없으면 직접 입력 (업체명 / BP 코드)' },
+        en: 'Recommended Supplier', ko: '추천 공급업체', picker: 'bp', ph: '업체명 / BP 코드 — BP Master 에서 고르거나 직접 입력' },
       { key: 'reason',   col: 'Reason',              type: 'textarea', req: true,  max: 2000,
         en: 'Reason for single source recommendation', enSub: '(use attachment if applicable)', ko: '단일 공급 사유', ph: '경쟁 없이 이 업체로 정한 이유 (길면 첨부로 대신하고 요약만)' },
       { key: 'known',    col: 'DateFirstKnown',      type: 'date',     req: true,
@@ -1813,9 +1818,11 @@ function fieldHtml(cat, fd) {
   }
   const ml = fd.max ? ' maxlength="' + fd.max + '"' : '';
   const ph = fd.ph ? ' placeholder="' + esc(fd.ph) + '"' : '';
-  if (fd.picker === 'bp') return '<div class="fld full">' + fieldLabel(fd) +
-    '<div class="sup-wrap"><input type="text" id="' + fd._id + '"' + ml + ph + ' autocomplete="off" oninput="supRender(\'' + cat + '\')" onclick="if(!this.value)openBpPicker(\'' + cat + '\')" onkeydown="if((event.key===\'ArrowDown\'&&!this.value)||(event.altKey&&event.key===\'ArrowDown\')){event.preventDefault();openBpPicker(\'' + cat + '\')}">' +
-    '<button type="button" class="sup-ico" id="' + cat + '-sup-btn" title="BP 검색" aria-label="BP 검색" onclick="openBpPicker(\'' + cat + '\')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></button></div>' +
+  if (fd.picker === 'bp') return '<div class="fld full"><div class="lbl-row">' + fieldLabel(fd) +
+    '<button type="button" class="bpm-pill" id="' + cat + '-sup-btn" title="BP Master 에서 공급업체 고르기" onclick="openBpPicker(\'' + cat + '\')">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v6.5c0 1.55 3.36 2.8 7.5 2.8"/><path d="M19.5 5.5v4"/><path d="M4.5 12v6.5c0 1.55 3.36 2.8 7.5 2.8"/><circle cx="17.5" cy="16.5" r="3.2"/><path d="M19.8 18.8 22 21"/></svg>' +
+      'BP Master 검색</button></div>' +
+    '<input type="text" id="' + fd._id + '"' + ml + ph + ' autocomplete="off" oninput="supRender(\'' + cat + '\')">' +
     '<div class="sup-src" id="' + cat + '-sup-src"></div></div>';
   const input = fd.type === 'textarea' ? '<textarea id="' + fd._id + '"' + ml + ph + '></textarea>' + (fd.max ? '<div class="hint">최대 ' + fd.max.toLocaleString('en-US') + '자</div>' : '')
     : fd.type === 'date' ? '<input type="date" id="' + fd._id + '" max="' + kstToday() + '">'
