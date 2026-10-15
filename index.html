@@ -998,7 +998,7 @@ const EXCHANGE_FILE = 'acc_voucher_exchange.xlsx';     // ACC Voucher 와 같은
 const CFG = {
   ACCESS: 'PROCUREMENT_ACCESS_',   // _1, _2 … 가 하나라도 있으면 입장 제한(명단 + 관리자 + 결재자). 없으면 STK 직원 누구나(ACC Others 와 같음)
   ADMIN:  'PROCUREMENT_ADMIN_',    // _1, _2 … 관리자 탭 · Excel · 남의 신청 철회
-  IT:     'PROCUREMENT_IT_',       // _1, _2 … (선택) 관리자 탭 + 진행 멈춤 감지 · 철회 기록 보기
+  IT:     'PROCUREMENT_IT',        // IT 담당(정식 키 · 10-15 사용자 생성) — 관리자 탭 + 진행 멈춤 감지 · 철회 기록 보기. PROCUREMENT_IT_1, _2 … 도 함께 읽는다
   CONTACT:'PROCUREMENT_CONTACT',   // 헤더 BU Admin 연락처(없으면 CONTACT_EMAIL)
 };
 
@@ -1037,20 +1037,20 @@ const PROC_TYPES = {
       { key: 'TL',  role: 'Team Leader (L5)', src: 'flex-tl', slot: 1, ko: '팀장' },
       { key: 'MC',  role: 'RBO MC (L4)',      src: 'flex-dh', slot: 2, ko: '부서장' },
       { key: 'CFO', role: 'CFO (L4)',         src: 'cfg', cfgKey: 'PROCUREMENT_CFO' },
-      { key: 'CEO', role: 'CEO (L3)',         src: 'cfg', cfgKey: 'PROCUREMENT_CEO' },
       { key: 'RD',  role: 'RD',               src: 'cfg', cfgKey: 'PROCUREMENT_RD' },
     ],
     /* 결재 기준(양식의 Approval Limit 표 · 사용자 결정 10-15): 설정 키 PROCUREMENT_SSL_LIMIT_L5 · _L4 · _L3 · _MAX(B열 숫자)가 있으면 그 값.
        < L5            → Team Leader 만(SSL 필수 대상 아님 안내)
        L5 ~ < L4       → Team Leader
        L4 ~ < L3       → Team Leader → RBO MC → CFO
-       L3 ~ (MAX 이상 포함) → Team Leader → RBO MC → CFO → CEO → RD (MAX 이상은 경고) */
+       L3 ~ (MAX 이상 포함) → Team Leader → RBO MC → CFO → RD (MAX 이상은 경고)
+       10-15 사용자 결정: STK 에는 CEO 직책이 없어 양식의 CEO (L3) 단계 · 결재표 줄 · 설정 키(PROCUREMENT_CEO)를 쓰지 않는다. */
     limitKeys: { L5: 'PROCUREMENT_SSL_LIMIT_L5', L4: 'PROCUREMENT_SSL_LIMIT_L4', L3: 'PROCUREMENT_SSL_LIMIT_L3', MAX: 'PROCUREMENT_SSL_LIMIT_MAX' },
     limitDefaults: { L5: 6500000, L4: 26000000, L3: 130000000, MAX: 2600000000 },
     tierOf(krw, L) { return krw >= L.MAX ? 4 : krw >= L.L3 ? 3 : krw >= L.L4 ? 2 : krw >= L.L5 ? 1 : 0; },
     approvalRule(krw, L) {
       const t = this.tierOf(krw, L);
-      return t >= 3 ? ['TL', 'MC', 'CFO', 'CEO', 'RD'] : t === 2 ? ['TL', 'MC', 'CFO'] : ['TL'];
+      return t >= 3 ? ['TL', 'MC', 'CFO', 'RD'] : t === 2 ? ['TL', 'MC', 'CFO'] : ['TL'];
     },
     tierLabel(krw, L) {
       const t = this.tierOf(krw, L), w = n => Number(n).toLocaleString('en-US');
@@ -1174,7 +1174,7 @@ function aacPatchWith(patch, curFields){
 let ADMIN_EMAILS = [];
 let IT_EMAILS    = [];
 let ACCESS_EMAILS = [];
-const FIXED = {};          // 설정 키 → { name, email } (CFO · CEO · RD 등 자동 지정 결재자)
+const FIXED = {};          // 설정 키 → { name, email } (CFO · RD 등 자동 지정 결재자)
 let PROC_LIMITS = {};      // 항목 → { L5, L4, L3, MAX } (설정 또는 기본값)
 let employeeData = [];
 let msalApp = null, user = null, siteId = null, _sysConfig = null, _configLoaded = false;
@@ -1751,7 +1751,7 @@ function renderApprLine(cat) {
     const t = T.tierOf(m.krw, L), w = n => Number(n).toLocaleString('en-US');
     note.innerHTML = !m.krw ? ''
       : t === 0 ? '<div class="tier-note info">ℹ️ SSL 은 <b>' + w(L.L5) + ' KRW 이상</b> 구매 건의 필수 대상입니다. 이 금액은 양식의 결재표 기준 미만이라 <b>Team Leader 결재만</b> 진행합니다.</div>'
-      : t === 4 ? '<div class="tier-note warn">⚠️ <b>' + w(L.MAX) + ' KRW 이상</b> — 양식 결재표(Approval Limit)의 범위를 넘는 금액입니다. 결재선은 Team Leader → RBO MC → CFO → CEO → RD 로 구성되며, 그 위 승인 절차가 필요한지 Procurement · F&C 와 확인해 주세요.</div>'
+      : t === 4 ? '<div class="tier-note warn">⚠️ <b>' + w(L.MAX) + ' KRW 이상</b> — 양식 결재표(Approval Limit)의 범위를 넘는 금액입니다. 결재선은 Team Leader → RBO MC → CFO → RD 로 구성되며, 그 위 승인 절차가 필요한지 Procurement · F&C 와 확인해 주세요.</div>'
       : '';
   }
 }
@@ -1877,9 +1877,9 @@ function applyFlexApprovers(){
 
 /* ── 부팅 ─────────────────────────────────────────────────── */
 /* 순서: 로그인 → 「접근 권한 확인」 화면 → /me · 사이트 · system_config → 입장 판정 → #app.
-   · 설정을 못 읽으면 결재선(CFO · CEO · RD) · 관리자를 판정할 수 없으므로 열지 않고 다시 시도 화면(fail-closed).
+   · 설정을 못 읽으면 결재선(CFO · RD) · 관리자를 판정할 수 없으므로 열지 않고 다시 시도 화면(fail-closed).
    · 입장: PROCUREMENT_ACCESS_N 이 하나도 없으면 STK 직원 누구나(ACC Others 09-30 과 같음).
-     있으면 그 명단 + 관리자 · IT · 연락처 · 자동 지정 결재자(CFO · CEO · RD) + 이 시스템 결재행이 있는 사람(팀장 · 부서장 · 대리인)만. */
+     있으면 그 명단 + 관리자 · IT · 연락처 · 자동 지정 결재자(CFO · RD) + 이 시스템 결재행이 있는 사람(팀장 · 부서장 · 대리인)만. */
 function cfgNum(cfg, key) {
   const v = cfg && cfg[key] ? String(cfg[key].name || cfg[key].email || '').replace(/[^0-9.]/g, '') : '';
   const n = parseFloat(v);
@@ -1887,7 +1887,7 @@ function cfgNum(cfg, key) {
 }
 function applyConfig(cfg) {
   ADMIN_EMAILS = [...new Set([...cfgSeqEmails(cfg, CFG.ADMIN), ...cfgEmails(cfg, ['ADMIN_SP']), ...cfgSeqEmails(cfg, 'ADMIN_SP_')].map(e => e.toLowerCase()))];
-  IT_EMAILS    = [...new Set([...cfgSeqEmails(cfg, CFG.IT), ...cfgEmails(cfg, ['PROCUREMENT_IT'])].map(e => e.toLowerCase()))];
+  IT_EMAILS    = [...new Set([...cfgEmails(cfg, [CFG.IT]), ...cfgSeqEmails(cfg, CFG.IT + '_')].map(e => e.toLowerCase()))];
   ACCESS_EMAILS = cfgSeqEmails(cfg, CFG.ACCESS).map(e => e.toLowerCase());
   const contact = cfgVal(cfg, CFG.CONTACT, cfgVal(cfg, 'CONTACT_EMAIL', { name: '', email: '' }));
   setHdrContact('contact-email', contact.email);
