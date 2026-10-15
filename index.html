@@ -2232,7 +2232,11 @@ async function submitForm(cat) {
       if (fd.type === 'money') {
         Object.assign(fields, { [fd.col]: round2(m.amt), Currency: m.cur, ExchangeRate: m.rate, ExchangeRateDate: m.date || '',
           ExchangeRateManual: !!m.manual, KRWAmount: m.krw, ApprovalTier: T.tierLabel(m.krw, L) });
-      } else if (fd.type === 'date') { if (v[fd.key]) fields[fd.col] = v[fd.key]; }
+      } else if (fd.type === 'date') {
+        /* 10-15: 목록 열이 「날짜 및 시간」 이어도 날짜가 하루 밀리지 않게 정오(UTC)로 저장한다.
+           날짜만 보내면 사이트 표준 시간대로 자정 해석돼 UTC 로 전날이 될 수 있다. 읽을 때는 앞 10자(날짜)만 쓴다. */
+        if (v[fd.key]) fields[fd.col] = /^\d{4}-\d{2}-\d{2}$/.test(v[fd.key]) ? v[fd.key] + 'T12:00:00Z' : v[fd.key];
+      }
       else fields[fd.col] = v[fd.key];
     });
     const created = await api('/sites/' + siteId + '/lists/' + T.req + '/items', 'POST', { fields });
