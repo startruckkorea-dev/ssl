@@ -325,18 +325,33 @@ body.rd-rule .appr-line-preview.rd-only{display:block}
 .appr-role{font-weight:600;font-size:13px;color:#323130}
 
 /* ── 결재 라인 · 결재자 블록 — APS 공통 (ACC Voucher 기준, 09-30) ──
-   결재 라인 미리보기(📋 결재 라인 + N차 배지 → …)와 결재자 블록 제목(N차 결재자 · 자동 지정/직접 선택 알약 · — 역할)을
+   결재 라인 미리보기(아이콘 · 결재 라인 · KRW 칩 · 구간 태그 + N차 배지 › …)와 결재자 블록 제목(N차 결재자 · 자동 지정/직접 선택 알약 · — 역할)을
    ACC Voucher 와 같은 모양으로 맞춘다. 시스템마다 달랐던 표시(제목 앞 파란 점, "(고정)" 글자, 회색 배지)는 쓰지 않는다.
    값은 acc_voucher/index.html 의 .appr-block · .appr-block-title · .line-step* · .appr-select-row · .appr-info 그대로. */
 .appr-line-preview{background:#f0f6ff;border:1px solid #c7e0f4;border-radius:6px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#323130}
 .appr-line-title{font-weight:600;color:#0078d4;margin-bottom:6px;font-size:12px}
-.appr-line-steps{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+/* 결재 라인 머리(10-16) — 📋 글자 줄 대신 아이콘 · 제목 · KRW 금액 칩 · 구간 태그. 금액이 없으면 칩은 「KRW —」, 태그 자리에 안내 문구. */
+.appr-line-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 10px;padding:0 0 9px;border-bottom:1px solid #d6e6f6}
+.appr-line-head .appr-line-title{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:12.5px;font-weight:700;color:#0b3d6e;letter-spacing:-.1px}
+.appr-line-ico{flex:none;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:#0a66c2;color:#fff}
+.appr-line-type{font-size:10.5px;color:#7a8794;font-weight:500}
+.appr-line-meta{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;margin-left:auto;min-width:0}
+.appr-line-amt{display:inline-flex;align-items:baseline;gap:5px;background:#fff;border:1px solid #b9d5f0;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;color:#0b3d6e;font-variant-numeric:tabular-nums;white-space:nowrap;box-shadow:0 1px 1px rgba(10,102,194,.06)}
+.appr-line-amt .cur{font-size:10px;font-weight:600;color:#5b7a99;letter-spacing:.3px}
+.appr-line-amt.empty{color:#a19f9d;border-style:dashed;border-color:#c8d6e5;box-shadow:none}
+.appr-line-tier{display:inline-flex;align-items:center;font-size:10.5px;font-weight:600;color:#0b5fa5;background:#e1effc;border-radius:4px;padding:2px 7px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.appr-line-tier.t0{color:#605e5c;background:#f0efee}
+.appr-line-tier.t3{color:#7a4b00;background:#fdf0d5}
+.appr-line-hint{font-size:11px;color:#7a8794}
+@media (max-width:640px){.appr-line-meta{margin-left:0;flex-basis:100%}}
+.appr-line-steps{display:flex;flex-wrap:wrap;gap:6px 2px;align-items:center}
 .line-step{display:inline-flex;align-items:center;gap:4px;margin:0 4px 0 0}
 .line-step-badge{display:inline-block;background:#0078d4;color:#fff;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700;margin:0}
 .line-step-badge.fixed{background:#107c10}
 .line-step-badge.extra{background:#d9a41a}
 .line-step-label{font-size:.75rem;color:#323130}
 .line-arrow{color:#a19f9d;font-size:13px;margin:0}
+.line-arrow svg{display:block}
 .appr-block{background:#fff;border:1px solid #edebe9;border-radius:8px;padding:14px 16px;margin-bottom:10px}
 .appr-block.appr-fixed{background:#f0f6ff;border-color:#c7e0f4}
 .appr-block-title{display:block;font-size:12px;font-weight:700;color:#323130;margin-bottom:10px;line-height:1.5}
@@ -559,7 +574,8 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .lbl-row > label{margin-bottom:0}
 .bpm-pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 10px 0 8px;border:1px solid #c7e0f4;border-radius:999px;background:#f0f6ff;color:#0b5fa5;
   font-size:11.5px;font-weight:600;font-family:inherit;line-height:1;letter-spacing:-.1px;cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s,color .12s,box-shadow .12s}
-.bpm-pill svg{flex:none;width:14px;height:14px}
+.bpm-pill .bpm-ico{flex:none;font-size:10.5px;line-height:1;transform:translateY(-.5px)}  /* BP Master · ACC Voucher 「🔍 검색」 과 같은 돋보기를 작게(10-16) */
+.bpm-pill:disabled .bpm-ico{filter:grayscale(1);opacity:.55}
 .bpm-pill:hover{background:#e1effb;border-color:#8cbde8;color:#005a9e}
 .bpm-pill:active{background:#d3e7f8}
 .bpm-pill:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(0,120,212,.28);border-color:#0078d4}
@@ -1834,7 +1850,7 @@ function fieldHtml(cat, fd) {
   const ph = fd.ph ? ' placeholder="' + esc(fd.ph) + '"' : '';
   if (fd.picker === 'bp') return '<div class="fld full"><div class="lbl-row">' + fieldLabel(fd) +
     '<button type="button" class="bpm-pill" id="' + cat + '-sup-btn" title="BP Master 에서 공급업체 고르기" onclick="openBpPicker(\'' + cat + '\')">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v6.5c0 1.55 3.36 2.8 7.5 2.8"/><path d="M19.5 5.5v4"/><path d="M4.5 12v6.5c0 1.55 3.36 2.8 7.5 2.8"/><circle cx="17.5" cy="16.5" r="3.2"/><path d="M19.8 18.8 22 21"/></svg>' +
+      '<span class="bpm-ico" aria-hidden="true">🔍</span>' +
       'BP Master 검색</button></div>' +
     '<input type="text" id="' + fd._id + '"' + ml + ph + ' autocomplete="off" oninput="supRender(\'' + cat + '\')">' +
     '<div class="sup-src" id="' + cat + '-sup-src"></div></div>';
@@ -1953,6 +1969,26 @@ function stepsFor(cat, krw) {
   const T = PROC_TYPES[cat], keys = T.approvalRule(krw, limitsOf(cat));
   return T.steps.filter(s => keys.includes(s.key));
 }
+/* 결재 라인 머리(10-16) — 아이콘 · 「결재 라인」 · KRW 금액 칩 · 구간 태그. 구간 경계는 결재 판정과 같은 limitsOf 값(PROCUREMENT_SSL_LIMIT_*)에서 만든다.
+   항목이 둘 이상일 때만 항목 이름을 작게 붙인다(화면 머리에 이미 항목 이름이 있다). 정확한 경계(≥ · <)는 구간 태그 title 에 둔다. */
+const LINE_ICO = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="3.5" cy="3.5" r="1.8"/><circle cx="12.5" cy="12.5" r="1.8"/><path d="M5.3 3.5H10a2.5 2.5 0 0 1 0 5H6a2.5 2.5 0 0 0 0 5h4.7"/></svg>';
+const LINE_CHEV = '<svg width="8" height="10" viewBox="0 0 8 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 1.5 6 5 2.5 8.5"/></svg>';
+function apprTierText(t, L) {
+  const w = n => Number(n).toLocaleString('en-US');
+  return t === 0 ? w(L.L5) + ' 미만' : t === 1 ? w(L.L5) + ' ~ ' + w(L.L4) + ' 구간' : t === 2 ? w(L.L4) + ' ~ ' + w(L.L3) + ' 구간' : w(L.L3) + ' 이상';
+}
+function apprLineHeadHtml(T, krw, L) {
+  const t = T.tierOf(krw, L);
+  return '<div class="appr-line-head">' +
+    '<span class="appr-line-title"><span class="appr-line-ico">' + LINE_ICO + '</span>결재 라인</span>' +
+    (CATS.length > 1 ? '<span class="appr-line-type">' + esc(T.label) + '</span>' : '') +
+    '<span class="appr-line-meta">' +
+      (krw ? '<span class="appr-line-amt"><span class="cur">KRW</span><span class="num">' + esc(fmtKrw(krw)) + '</span></span>' +
+             '<span class="appr-line-tier t' + t + '" title="' + esc(T.tierLabel(krw, L)) + '">' + esc(apprTierText(t, L)) + '</span>'
+           : '<span class="appr-line-amt empty"><span class="cur">KRW</span><span class="num">—</span></span>' +
+             '<span class="appr-line-hint">금액을 입력하면 결재 라인이 정해집니다</span>') +
+    '</span></div>';
+}
 function renderApprLine(cat) {
   const T = PROC_TYPES[cat], L = limitsOf(cat);
   const m = moneyState(cat), steps = stepsFor(cat, m.krw), keys = steps.map(s => s.key);
@@ -1962,9 +1998,9 @@ function renderApprLine(cat) {
     .concat(ex.map(x => ({ label: x.name ? esc(x.name) + ' (추가)' : '추가 결재자 (미지정)', cls: ' extra' })))
     .concat(steps.slice(1).map(st => ({ label: esc(st.role), cls: st.src === 'cfg' ? ' fixed' : '' })));
   const pv = document.getElementById(cat + '-line-preview');
-  if (pv) pv.innerHTML = '<div class="appr-line-title">📋 결재 라인 (' + esc(T.label) + ' · KRW 환산 ' + (m.krw ? esc(fmtKrw(m.krw)) : '0') + ' → ' + esc(T.tierLabel(m.krw, L)) + ')</div>' +
+  if (pv) pv.innerHTML = apprLineHeadHtml(T, m.krw, L) +
     '<div class="appr-line-steps">' + line.map((st, i) => '<span class="line-step"><span class="line-step-badge' + st.cls + '">' + (i + 1) + '차</span><span class="line-step-label">' + st.label + '</span>' +
-      (i < line.length - 1 ? '<span class="line-arrow">→</span>' : '') + '</span>').join('') + '</div>' +
+      (i < line.length - 1 ? '<span class="line-arrow" aria-hidden="true">' + LINE_CHEV + '</span>' : '') + '</span>').join('') + '</div>' +
     extraHelpHtml(cat, nEx, steps);
   T.steps.forEach(st => {
     const b = document.getElementById(cat + '-blk-' + st.key); if (!b) return;
