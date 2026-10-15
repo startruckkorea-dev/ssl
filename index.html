@@ -556,29 +556,38 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .req-att{color:#a4262c;font-weight:700}
 .half-row > .fld{margin-bottom:13px}
 .half-row > .fld label{white-space:normal}
-/* 추천 공급업체 — BP 검색(ACC Voucher BP 검색 모달과 같은 정보 · 은행/계좌는 표시 안 함) */
-.sup-row{display:flex;gap:6px}
-.sup-row input{flex:1;min-width:0}
-.sup-btn{flex:none;white-space:nowrap;padding:0 14px;border:1px solid #0078d4;background:#f0f6ff;color:#0078d4;border-radius:4px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit}
-.sup-btn:hover{background:#0078d4;color:#fff}
-.sup-btn:disabled{border-color:#d2d0ce;background:#f3f2f1;color:#a19f9d;cursor:not-allowed}
+/* 추천 공급업체 — 칸 안 오른쪽 검색 아이콘(콤보박스 모양) + BP-Master 「BP 검색」 과 같은 창. 은행 · 계좌는 표시 안 함 */
+.sup-wrap{position:relative}
+.sup-wrap input{padding-right:38px}
+.sup-ico{position:absolute;top:0;right:0;bottom:0;width:36px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:#8a8886;cursor:pointer;border-radius:0 4px 4px 0;padding:0}
+.sup-ico:hover,.sup-ico:focus-visible{color:#0078d4;background:#f0f6ff;outline:none}
+.sup-ico:disabled{color:#c8c6c4;cursor:not-allowed;background:none}
 .sup-src{font-size:.7rem;color:#8a8886;margin-top:4px;min-height:1em;line-height:1.5}
 .sup-src .k{color:#0b5fa5;background:#e1f0ff;border-radius:9px;padding:0 7px;font-weight:600;font-size:10px;margin-right:2px}
 .sup-src .m{color:#8a8886;background:#f3f2f1;border-radius:9px;padding:0 7px;font-size:10px;margin-right:2px}
-.bp-box{max-width:620px}
-#bp-q{width:100%}
-#bp-res{max-height:52vh;overflow-y:auto;margin-top:10px;border:1px solid #edebe9;border-radius:6px}
-.bp-it{padding:8px 12px;border-bottom:1px solid #f3f2f1;cursor:pointer;outline:none}
-.bp-it:last-child{border-bottom:none}
-.bp-it:hover,.bp-it:focus{background:#f0f6ff}
-.bp-it .c{font-size:.72rem;color:#0078d4;font-weight:700}
-.bp-it .n{font-size:.84rem;color:#323130;font-weight:600;margin-top:1px;overflow-wrap:anywhere}
-.bp-it .n .ko{font-weight:400;color:#605e5c;margin-left:4px}
-.bp-it .s{font-size:.72rem;color:#605e5c;margin-top:1px}
+/* BP 검색 창 — BP-Master(bp-master-data) 의 BP 검색 모달과 같은 모양 · 값 */
+#bp-ov{z-index:800}
+.bpm{background:#fff;border-radius:8px;box-shadow:0 16px 48px rgba(0,0,0,.22);width:100%;max-width:500px;max-height:75vh;overflow-y:auto;font-family:'Segoe UI',sans-serif}
+.bpm-hd{padding:14px 18px;background:#0078d4;color:#fff;display:flex;justify-content:space-between;align-items:center;font-weight:700;border-radius:8px 8px 0 0;position:sticky;top:0;z-index:1}
+.bpm-hd span{display:inline-flex;align-items:center;gap:8px}
+.bpm-hd button{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;padding:0 2px}
+.bpm-bd{padding:16px 18px}
+.bpm-sb{display:flex;gap:6px;margin-bottom:12px}
+.bpm-sb input{flex:1;border:1px solid #d2d0ce;border-radius:4px;padding:7px 10px;font-size:.78rem;min-width:0}
+.bpm-sb button{padding:7px 14px;border:none;border-radius:4px;background:#0078d4;color:#fff;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.bpm-sb button:hover{background:#005a9e}
+.bp-it{padding:9px 12px;border:1px solid #edebe9;border-radius:4px;margin-bottom:5px;cursor:pointer;transition:all .15s;outline:none}
+.bp-it:hover,.bp-it:focus{background:#f0f6ff;border-color:#0078d4}
+.bp-it .c{font-size:11px;color:#a19f9d}
+.bp-it .n{font-size:13px;font-weight:600;color:#323130;overflow-wrap:anywhere}
+.bp-it .s{font-size:11px;color:#605e5c}
 .bp-inact{background:#fde7e9;color:#a4262c;border-radius:8px;padding:0 6px;font-size:10px;font-weight:700}
-.bp-more{font-size:.7rem;color:#a19f9d;padding:4px 12px;background:#f9f8f7}
-.bp-empty{text-align:center;padding:22px 12px;color:#a19f9d;font-size:.8rem}
-.bp-foot{font-size:.72rem;color:#8a8886;margin-top:8px}
+.bp-more{font-size:11px;color:#a19f9d;padding:4px 12px;border-bottom:1px solid #edebe9;margin-bottom:5px}
+.bp-empty{text-align:center;padding:20px;color:#a19f9d;font-size:.8rem}
+.bp-foot{font-size:11px;color:#a19f9d;margin-top:8px}
+/* 폼 입력 높이 통일 — 날짜 칸(달력 단추 때문에 더 높던 것)을 한 줄 글자 칸과 같은 높이로(작성일 · 신청자 줄, 날짜 · 리드타임 줄, 공급업체 칸) */
+.pform .fld > input[type=text],.pform .fld > input[type=date],.pform .sup-wrap > input{height:34px;line-height:normal;box-sizing:border-box}
+@media screen and (max-width:767px){.pform .fld > input[type=text],.pform .fld > input[type=date],.pform .sup-wrap > input{height:40px;min-height:0}}
 @media (max-width:900px){.money-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 
 /* ── 공식 양식 PDF 쪽(화면 밖에서만 그린다 · #pdf-host) — 원본 「NPM Procurement: Single Source Letter of Justification · Valid as of 04/2022」 배치 ──
@@ -1000,14 +1009,18 @@ window.apsYear = (function () {
 
 <div id="loading" role="status" aria-live="polite"><div class="lbox"><div class="spin"></div><div class="lt" id="loading-msg">처리 중입니다</div><div class="ls" id="loading-sub"></div></div></div>
 
-<!-- 추천 공급업체 — BP Master 검색 -->
+<!-- 추천 공급업체 — BP 검색(BP-Master 의 BP 검색 모달과 같은 구성 · Employee · 은행/계좌 제외) -->
 <div class="ov" id="bp-ov" onclick="if(event.target===this)closeBpPicker()">
-  <div class="modal-box bp-box">
-    <button class="modal-close" onclick="closeBpPicker()">&times;</button>
-    <div class="modal-title"><span>🔍 공급업체 검색 <span style="font-weight:400;color:#8a8886;font-size:.78rem">BP Master · Vendor / Customer</span></span></div>
-    <input type="text" id="bp-q" placeholder="BP 코드 · 업체명 · 한글명 · 사업자등록번호" maxlength="60" oninput="bpSearch(this.value)" autocomplete="off">
-    <div id="bp-res"></div>
-    <div class="bp-foot">목록에 없는 업체(신규 등)는 창을 닫고 칸에 직접 입력하세요.</div>
+  <div class="bpm" role="dialog" aria-label="BP 검색">
+    <div class="bpm-hd"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>BP 검색 (Vendor / Customer)</span><button type="button" onclick="closeBpPicker()" aria-label="닫기">✕</button></div>
+    <div class="bpm-bd">
+      <div class="bpm-sb">
+        <input type="text" id="bp-q" placeholder="BP코드, 이름, 한글이름, 사업자등록번호 검색..." maxlength="60" oninput="bpSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();bpSearch(this.value,true)}" autocomplete="off">
+        <button type="button" onclick="bpSearch(document.getElementById('bp-q').value,true)">검색</button>
+      </div>
+      <div id="bp-res"></div>
+      <div class="bp-foot">목록에 없는 업체(신규 등)는 창을 닫고 칸에 직접 입력하세요.</div>
+    </div>
   </div>
 </div>
 
@@ -1065,7 +1078,7 @@ const PROC_TYPES = {
       { key: 'desc',     col: 'Description',         type: 'textarea', req: true,  max: 1000,
         en: 'Description of product or service (specification, quantity,)', ko: '품목 · 서비스 내용', ph: '예: 2026 Concur service fee (사양 · 수량 포함)' },
       { key: 'supplier', col: 'RecommendedSupplier', type: 'text',     req: true,  max: 200,
-        en: 'Recommended Supplier', ko: '추천 공급업체', picker: 'bp', ph: 'BP 검색으로 고르거나 직접 입력 — 업체명 / BP 코드' },
+        en: 'Recommended Supplier', ko: '추천 공급업체', picker: 'bp', ph: '클릭해 BP 검색 · 목록에 없으면 직접 입력 (업체명 / BP 코드)' },
       { key: 'reason',   col: 'Reason',              type: 'textarea', req: true,  max: 2000,
         en: 'Reason for single source recommendation', enSub: '(use attachment if applicable)', ko: '단일 공급 사유', ph: '경쟁 없이 이 업체로 정한 이유 (길면 첨부로 대신하고 요약만)' },
       { key: 'known',    col: 'DateFirstKnown',      type: 'date',     req: true,
@@ -1309,16 +1322,44 @@ function fmtMoneyInput(el) {
   el.value = digits ? Number(digits).toLocaleString('ko-KR') : '';
 }
 function numVal(id) { return Number(String(val(id)).replace(/[^0-9]/g, '')) || 0; }
-/* 외화 금액 입력칸 — 천 단위 콤마 + 소수 둘째 자리까지(KRW 는 정수). 저장 · 계산은 amtVal() */
-function fmtAmtInput(el, intOnly) {
-  let s = String(el.value || '').replace(/[^0-9.]/g, '');
+/* 숫자 입력칸(금액 · 환율) — 천 단위 콤마 · 소수 자릿수를 맞추되 「고치는 중」 을 방해하지 않는다(10-15 버그: 500,000 에서 맨 앞 5 를 지우면 전부 지워짐).
+   · 커서 위치 유지: 커서 앞의 「숫자 · 소수점」 개수를 세어 다시 쓴 값에서 같은 개수 뒤에 둔다(콤마가 생기거나 빠져도 제자리).
+   · 입력 중에는 앞자리 0 을 지우지 않는다(500,000 → 5 삭제 → 00,000 → 6 입력 → 600,000). 칸을 떠날 때(blur) 정리한다.
+   · 콤마 바로 뒤에서 Backspace / 바로 앞에서 Delete 는 그 옆 숫자를 지운다(numKeyDown) — 콤마만 지우면 곧바로 다시 생겨 아무 일도 안 일어나던 것.
+   · decimals: KRW 0(정수만 · 붙여 넣은 소수는 버림), 외화 2, 환율 6. group: 콤마 여부(환율은 콤마 없이). */
+function numClean(raw, o) {
+  let s = String(raw || '').replace(/[^0-9.]/g, '');
   const i = s.indexOf('.');
-  if (i >= 0) s = s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, '');
-  let [a, b] = s.split('.');
-  a = (a || '').replace(/^0+(?=\d)/, '').slice(0, 13);
-  if (intOnly) b = undefined; else if (b != null) b = b.slice(0, 2);
-  el.value = (a ? Number(a).toLocaleString('en-US') : (b != null ? '0' : '')) + (b != null ? '.' + b : '');
+  let a = i >= 0 ? s.slice(0, i) : s, b = i >= 0 ? s.slice(i + 1).replace(/\./g, '') : null;
+  a = a.slice(0, o.maxInt || 13);
+  if (!o.decimals) b = null; else if (b != null) b = b.slice(0, o.decimals);
+  if (o.trim) { a = a.replace(/^0+(?=\d)/, ''); if (b === '') b = null; }
+  const ga = o.group === false ? a : a.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return (a === '' && b != null ? '0' : ga) + (b != null ? '.' + b : '');
 }
+function numApply(el, o) {
+  const v = el.value, focused = document.activeElement === el;
+  const pos = focused && el.selectionStart != null ? el.selectionStart : v.length;
+  let k = 0; const seenDot = v.indexOf('.');
+  for (let x = 0; x < pos; x++) { const ch = v[x]; if (/\d/.test(ch) || (ch === '.' && x === seenDot && o.decimals)) k++; }
+  const out = numClean(v, o);
+  if (out === v) return;
+  if (/^0\./.test(out) && !/^0/.test(v.replace(/[^0-9.]/g, '')) && k > 0) k++;   // 「.5」 → 「0.5」 앞에 붙은 0
+  el.value = out;
+  if (!focused) return;
+  let np = 0, c = 0;
+  while (np < out.length && c < k) { if (/[\d.]/.test(out[np])) c++; np++; }
+  try { el.setSelectionRange(np, np); } catch (e) {}
+}
+function numKeyDown(ev) {
+  const el = ev.target, a = el.selectionStart, b = el.selectionEnd;
+  if (a == null || a !== b) return;
+  if (ev.key === 'Backspace' && el.value[a - 1] === ',') el.setSelectionRange(a - 1, a - 1);
+  else if (ev.key === 'Delete' && el.value[a] === ',') el.setSelectionRange(a + 1, a + 1);
+}
+function fmtAmtInput(el, intOnly) { numApply(el, { decimals: intOnly ? 0 : 2, maxInt: 13 }); }
+function fmtRateInput(el) { numApply(el, { decimals: 6, maxInt: 9, group: false }); }
+function numBlur(el, intOnly, cat, why) { const t = numClean(el.value, { decimals: intOnly ? 0 : (el.id.endsWith('-rate') ? 6 : 2), maxInt: el.id.endsWith('-rate') ? 9 : 13, group: !el.id.endsWith('-rate'), trim: true }); if (t !== el.value) { el.value = t; onMoneyChange(cat, why); } }
 function amtVal(id) { const n = parseFloat(String(val(id)).replace(/,/g, '')); return isFinite(n) ? n : 0; }
 function round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
 /* KRW 는 늘 정수(10-15 사용자 결정) — 반올림(0.5 올림). 부동소수 오차(…49.9999)로 내려가지 않게 소수 6자리에서 먼저 정리한다 */
@@ -1697,30 +1738,34 @@ function openBpPicker(cat) {
   const q = document.getElementById('bp-q');
   q.value = '';
   document.getElementById('bp-ov').classList.add('on');
-  bpSearch('');
+  bpSearch('', true);   // BP-Master 처럼 열자마자 목록(앞 10건)
   setTimeout(() => q.focus(), 50);
 }
 function closeBpPicker() { document.getElementById('bp-ov').classList.remove('on'); _bpFor = null; }
-function bpSearch(q) {
+function bpSearch(q, now) {
   clearTimeout(_bpTimer);
-  _bpTimer = setTimeout(() => {
+  const run = () => {
     const el = document.getElementById('bp-res');
-    if (!BPM.loaded) { el.innerHTML = '<div class="bp-empty">BP 목록을 불러오는 중입니다…</div>'; return; }
+    if (!BPM.loaded) { el.innerHTML = '<div class="bp-empty">데이터 로딩 중...</div>'; return; }
     const kw = String(q || '').trim().toLowerCase(), kd = kw.replace(/[^0-9a-z]/g, '');
-    if (!kw) { el.innerHTML = '<div class="bp-empty">BP 코드 · 업체명 · 한글명 · 사업자등록번호로 검색하세요 (' + BPM.list.length.toLocaleString('en-US') + '건)</div>'; return; }
-    const out = [];
-    for (const b of BPM.list) {
-      if (b.code.toLowerCase().includes(kw) || b.name.toLowerCase().includes(kw) || (b.nameKo && b.nameKo.toLowerCase().includes(kw)) ||
-          (kd.length >= 3 && b.bizNo && b.bizNo.replace(/[^0-9a-z]/gi, '').toLowerCase().includes(kd))) { out.push(b); if (out.length >= 50) break; }
+    let out = [];
+    if (!kw) out = BPM.list.filter(b => !b.inactive).slice(0, 10);
+    else {
+      for (const b of BPM.list) {
+        if (b.code.toLowerCase().includes(kw) || b.name.toLowerCase().includes(kw) || (b.nameKo && b.nameKo.toLowerCase().includes(kw)) ||
+            (kd.length >= 3 && b.bizNo && b.bizNo.replace(/[^0-9a-z]/gi, '').toLowerCase().includes(kd))) { out.push(b); if (out.length >= 50) break; }
+      }
+      out.sort((a, b) => (a.inactive - b.inactive));
     }
-    out.sort((a, b) => (a.inactive - b.inactive));
     if (!out.length) { el.innerHTML = '<div class="bp-empty">검색 결과 없음 — 목록에 없는 업체는 창을 닫고 직접 입력하세요.</div>'; return; }
-    el.innerHTML = (out.length >= 50 ? '<div class="bp-more">상위 50건 — 검색어를 더 입력하세요</div>' : '') + out.map(b =>
+    el.innerHTML = (out.length >= 50 ? '<div class="bp-more">상위 50개 표시</div>' : '') + out.map(b =>
       '<div class="bp-it" data-bp="' + esc(b.code) + '" tabindex="0">' +
         '<div class="c">' + esc(b.code) + ' · ' + esc(b.type || '-') + (b.inactive ? ' <span class="bp-inact">비활성</span>' : '') + '</div>' +
-        '<div class="n">' + esc(b.name) + (b.nameKo ? ' <span class="ko">' + esc(b.nameKo) + '</span>' : '') + '</div>' +
+        '<div class="n">' + esc(b.name) + '</div>' +
+        (b.nameKo ? '<div class="s">' + esc(b.nameKo) + '</div>' : '') +
         '<div class="s">사업자등록번호: ' + esc(b.bizNo || 'Master data 미기재') + '</div></div>').join('');
-  }, 150);
+  };
+  if (now) run(); else _bpTimer = setTimeout(run, 200);
 }
 function selectBp(code) {
   const b = BPM.list.find(x => x.code === code), cat = _bpFor;
@@ -1758,9 +1803,9 @@ function fieldHtml(cat, fd) {
   if (fd.type === 'money') {
     return '<div class="fld full">' + fieldLabel(Object.assign(fd, { _id: cat + '-amt' })) +
       '<div class="money-grid">' +
-        '<div class="fld"><label style="font-weight:400;color:#605e5c">금액 (Amount)</label><input type="text" id="' + cat + '-amt" inputmode="decimal" maxlength="20" placeholder="0" oninput="fmtAmtInput(this, val(\'' + cat + '-cur\')===\'KRW\'); onMoneyChange(\'' + cat + '\')"></div>' +
+        '<div class="fld"><label style="font-weight:400;color:#605e5c">금액 (Amount)</label><input type="text" id="' + cat + '-amt" inputmode="decimal" maxlength="20" placeholder="0" onkeydown="numKeyDown(event)" oninput="fmtAmtInput(this, val(\'' + cat + '-cur\')===\'KRW\'); onMoneyChange(\'' + cat + '\')" onblur="numBlur(this, val(\'' + cat + '-cur\')===\'KRW\', \'' + cat + '\')"></div>' +
         '<div class="fld"><label style="font-weight:400;color:#605e5c">통화</label><select id="' + cat + '-cur" onchange="onMoneyChange(\'' + cat + '\',\'cur\')"><option value="KRW">KRW</option></select></div>' +
-        '<div class="fld"><label style="font-weight:400;color:#605e5c">환율 (1 단위 = KRW)</label><input type="text" id="' + cat + '-rate" inputmode="decimal" maxlength="16" placeholder="-" oninput="this.value=this.value.replace(/[^0-9.,]/g,\'\'); onMoneyChange(\'' + cat + '\',\'rate\')"></div>' +
+        '<div class="fld"><label style="font-weight:400;color:#605e5c">환율 (1 단위 = KRW)</label><input type="text" id="' + cat + '-rate" inputmode="decimal" maxlength="16" placeholder="-" oninput="fmtRateInput(this); onMoneyChange(\'' + cat + '\',\'rate\')" onblur="numBlur(this, false, \'' + cat + '\', \'rate\')"></div>' +
         '<div class="fld"><label style="font-weight:400;color:#605e5c">KRW 환산 (결재 기준)</label><input type="text" id="' + cat + '-krw" readonly tabindex="-1" placeholder="0"></div>' +
       '</div>' +
       '<div class="rate-info" id="' + cat + '-rate-info"></div>' +
@@ -1769,8 +1814,8 @@ function fieldHtml(cat, fd) {
   const ml = fd.max ? ' maxlength="' + fd.max + '"' : '';
   const ph = fd.ph ? ' placeholder="' + esc(fd.ph) + '"' : '';
   if (fd.picker === 'bp') return '<div class="fld full">' + fieldLabel(fd) +
-    '<div class="sup-row"><input type="text" id="' + fd._id + '"' + ml + ph + ' oninput="supRender(\'' + cat + '\')">' +
-    '<button type="button" class="sup-btn" id="' + cat + '-sup-btn" onclick="openBpPicker(\'' + cat + '\')">🔍 BP 검색</button></div>' +
+    '<div class="sup-wrap"><input type="text" id="' + fd._id + '"' + ml + ph + ' autocomplete="off" oninput="supRender(\'' + cat + '\')" onclick="if(!this.value)openBpPicker(\'' + cat + '\')" onkeydown="if((event.key===\'ArrowDown\'&&!this.value)||(event.altKey&&event.key===\'ArrowDown\')){event.preventDefault();openBpPicker(\'' + cat + '\')}">' +
+    '<button type="button" class="sup-ico" id="' + cat + '-sup-btn" title="BP 검색" aria-label="BP 검색" onclick="openBpPicker(\'' + cat + '\')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></button></div>' +
     '<div class="sup-src" id="' + cat + '-sup-src"></div></div>';
   const input = fd.type === 'textarea' ? '<textarea id="' + fd._id + '"' + ml + ph + '></textarea>' + (fd.max ? '<div class="hint">최대 ' + fd.max.toLocaleString('en-US') + '자</div>' : '')
     : fd.type === 'date' ? '<input type="date" id="' + fd._id + '" max="' + kstToday() + '">'
@@ -1818,7 +1863,7 @@ function renderForms() {
       '<div class="sec">2. ' + esc(T.fullLabel) + '</div>' +
       (c === 'ssl' ? '<div class="ssl-intro" role="note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="7.5" x2="12.01" y2="7.5"/></svg><div>' +
         '<div class="en">Required, if the internal customer recommends to procure from one specific supplier with exclusion of competition (Single Source Projects). ' +
-        'Mandatory for all requisitions with a volume <b>≥ 500,000 EUR (650,000,000 KRW)</b>.</div>' +
+        'Mandatory for all requisitions with a volume <b>≥ 6,500,000 KRW</b>.</div>' +
         '<div class="ko">특정 업체 한 곳과 경쟁 없이 거래할 때 작성합니다. 결재선은 KRW 환산 금액에 따라 자동으로 정해집니다.</div></div></div>' : '') +
       formFieldsHtml(c, flds) +
       '<div class="sec">3. 금액 (Volume)</div>' + money.map(fd => fieldHtml(c, fd)).join('') +
