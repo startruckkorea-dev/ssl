@@ -546,6 +546,31 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .pform-actions{text-align:right;margin-top:20px}
 .pform-actions .btn-p{padding:9px 26px;margin-left:6px}
 .req-att{color:#a4262c;font-weight:700}
+.half-row > .fld{margin-bottom:13px}
+.half-row > .fld label{white-space:normal}
+/* 추천 공급업체 — BP 검색(ACC Voucher BP 검색 모달과 같은 정보 · 은행/계좌는 표시 안 함) */
+.sup-row{display:flex;gap:6px}
+.sup-row input{flex:1;min-width:0}
+.sup-btn{flex:none;white-space:nowrap;padding:0 14px;border:1px solid #0078d4;background:#f0f6ff;color:#0078d4;border-radius:4px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit}
+.sup-btn:hover{background:#0078d4;color:#fff}
+.sup-btn:disabled{border-color:#d2d0ce;background:#f3f2f1;color:#a19f9d;cursor:not-allowed}
+.sup-src{font-size:.7rem;color:#8a8886;margin-top:4px;min-height:1em;line-height:1.5}
+.sup-src .k{color:#0b5fa5;background:#e1f0ff;border-radius:9px;padding:0 7px;font-weight:600;font-size:10px;margin-right:2px}
+.sup-src .m{color:#8a8886;background:#f3f2f1;border-radius:9px;padding:0 7px;font-size:10px;margin-right:2px}
+.bp-box{max-width:620px}
+#bp-q{width:100%}
+#bp-res{max-height:52vh;overflow-y:auto;margin-top:10px;border:1px solid #edebe9;border-radius:6px}
+.bp-it{padding:8px 12px;border-bottom:1px solid #f3f2f1;cursor:pointer;outline:none}
+.bp-it:last-child{border-bottom:none}
+.bp-it:hover,.bp-it:focus{background:#f0f6ff}
+.bp-it .c{font-size:.72rem;color:#0078d4;font-weight:700}
+.bp-it .n{font-size:.84rem;color:#323130;font-weight:600;margin-top:1px;overflow-wrap:anywhere}
+.bp-it .n .ko{font-weight:400;color:#605e5c;margin-left:4px}
+.bp-it .s{font-size:.72rem;color:#605e5c;margin-top:1px}
+.bp-inact{background:#fde7e9;color:#a4262c;border-radius:8px;padding:0 6px;font-size:10px;font-weight:700}
+.bp-more{font-size:.7rem;color:#a19f9d;padding:4px 12px;background:#f9f8f7}
+.bp-empty{text-align:center;padding:22px 12px;color:#a19f9d;font-size:.8rem}
+.bp-foot{font-size:.72rem;color:#8a8886;margin-top:8px}
 @media (max-width:900px){.money-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 
 /* ── 공식 양식 PDF 쪽(화면 밖에서만 그린다 · #pdf-host) — 원본 「NPM Procurement: Single Source Letter of Justification · Valid as of 04/2022」 배치 ──
@@ -967,6 +992,17 @@ window.apsYear = (function () {
 
 <div id="loading" role="status" aria-live="polite"><div class="lbox"><div class="spin"></div><div class="lt" id="loading-msg">처리 중입니다</div><div class="ls" id="loading-sub"></div></div></div>
 
+<!-- 추천 공급업체 — BP Master 검색 -->
+<div class="ov" id="bp-ov" onclick="if(event.target===this)closeBpPicker()">
+  <div class="modal-box bp-box">
+    <button class="modal-close" onclick="closeBpPicker()">&times;</button>
+    <div class="modal-title"><span>🔍 공급업체 검색 <span style="font-weight:400;color:#8a8886;font-size:.78rem">BP Master · Vendor / Customer</span></span></div>
+    <input type="text" id="bp-q" placeholder="BP 코드 · 업체명 · 한글명 · 사업자등록번호" maxlength="60" oninput="bpSearch(this.value)" autocomplete="off">
+    <div id="bp-res"></div>
+    <div class="bp-foot">목록에 없는 업체(신규 등)는 창을 닫고 칸에 직접 입력하세요.</div>
+  </div>
+</div>
+
 <!-- 공식 PDF 를 그릴 때만 쓰는 화면 밖 자리(사용자에게 보이지 않음) -->
 <div id="pdf-host" aria-hidden="true" style="position:fixed;left:-10000px;top:0;z-index:-1"></div>
 <script>
@@ -1017,19 +1053,19 @@ const PROC_TYPES = {
     attachRequired: true,
     fields: [
       { key: 'reqNo',    col: 'ReqNumber',           type: 'text',     req: false, max: 60,
-        en: 'Req-number of the respective requisition', ko: '해당 구매요청(PR) 번호', ph: '구매요청 번호가 있으면 입력 (선택)' },
+        en: 'Req-number of the respective requisition', ko: '구매요청 번호', ph: '있으면 입력' },
       { key: 'desc',     col: 'Description',         type: 'textarea', req: true,  max: 1000,
-        en: 'Description of product or service (specification, quantity,)', ko: '제품 · 서비스 내용(사양 · 수량)', ph: '예: 2026 Concur service fee' },
+        en: 'Description of product or service (specification, quantity,)', ko: '품목 · 서비스 내용', ph: '예: 2026 Concur service fee (사양 · 수량 포함)' },
       { key: 'supplier', col: 'RecommendedSupplier', type: 'text',     req: true,  max: 200,
-        en: 'Recommended Supplier', ko: '추천 공급업체', ph: '업체명 / BP 코드 (예: DAIMLER TRUCK SOUTHERN AFRICA LTD. / KR850089)' },
+        en: 'Recommended Supplier', ko: '추천 공급업체', picker: 'bp', ph: 'BP 검색으로 고르거나 직접 입력 — 업체명 / BP 코드' },
       { key: 'reason',   col: 'Reason',              type: 'textarea', req: true,  max: 2000,
-        en: 'Reason for single source recommendation', enSub: '(use attachment if applicable)', ko: '단일 공급 추천 사유', ph: '경쟁 없이 이 공급업체로 정한 이유를 적어 주세요. 길면 첨부파일로 붙이고 요약만 적어도 됩니다.' },
+        en: 'Reason for single source recommendation', enSub: '(use attachment if applicable)', ko: '단일 공급 사유', ph: '경쟁 없이 이 업체로 정한 이유 (길면 첨부로 대신하고 요약만)' },
       { key: 'known',    col: 'DateFirstKnown',      type: 'date',     req: true,
-        en: 'Date the requirement was first known', ko: '요구 사항을 처음 안 날' },
+        en: 'Date the requirement was first known', ko: '필요를 알게 된 날', half: true },
       { key: 'lead',     col: 'LeadTime',            type: 'text',     req: true,  max: 60,
-        en: 'Lead time allowed purchasing for order placement', ko: '발주까지 허용 기간', ph: '예: 10 days' },
+        en: 'Lead time allowed purchasing for order placement', ko: '발주까지 허용 기간', ph: '예: 10 days', half: true },
       { key: 'volume',   col: 'TotalVolume',         type: 'money',    req: true,
-        en: 'Eventual total volume of buy anticipated (incl. anticipated add on requirements)', ko: '총 예상 구매 금액(추가 예상분 포함)' },
+        en: 'Eventual total volume of buy anticipated (incl. anticipated add on requirements)', ko: '예상 총 구매 금액(추가분 포함)' },
     ],
     // 목록 · APS 에 보이는 요청 제목 — 양식에 제목 칸이 없어 Description 첫 줄로 만든다(저장 열 RequestTitle)
     titleOf: v => String(v.desc || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean)[0] || '',
@@ -1043,11 +1079,12 @@ const PROC_TYPES = {
        < L5            → Team Leader 만(SSL 필수 대상 아님 안내)
        L5 ~ < L4       → Team Leader
        L4 ~ < L3       → Team Leader → RBO MC → CFO
-       L3 ~ (MAX 이상 포함) → Team Leader → RBO MC → CFO → RD (MAX 이상은 경고)
+       L3 이상          → Team Leader → RBO MC → CFO → RD (10-15: 2,600,000,000 KRW 이상 경고 · 구간은 없앴다 — 상한 없이 같은 4단계)
+       MAX(_MAX 키)는 화면 · 결재 판정에 쓰지 않는다. 공식 PDF 결재표 RD 줄의 「< 2,600,000,000 KRW」 는 원본 양식 문구라 그대로 둔다(limitCell).
        10-15 사용자 결정: STK 에는 CEO 직책이 없어 양식의 CEO (L3) 단계 · 결재표 줄 · 설정 키(PROCUREMENT_CEO)를 쓰지 않는다. */
     limitKeys: { L5: 'PROCUREMENT_SSL_LIMIT_L5', L4: 'PROCUREMENT_SSL_LIMIT_L4', L3: 'PROCUREMENT_SSL_LIMIT_L3', MAX: 'PROCUREMENT_SSL_LIMIT_MAX' },
     limitDefaults: { L5: 6500000, L4: 26000000, L3: 130000000, MAX: 2600000000 },
-    tierOf(krw, L) { return krw >= L.MAX ? 4 : krw >= L.L3 ? 3 : krw >= L.L4 ? 2 : krw >= L.L5 ? 1 : 0; },
+    tierOf(krw, L) { return krw >= L.L3 ? 3 : krw >= L.L4 ? 2 : krw >= L.L5 ? 1 : 0; },
     approvalRule(krw, L) {
       const t = this.tierOf(krw, L);
       return t >= 3 ? ['TL', 'MC', 'CFO', 'RD'] : t === 2 ? ['TL', 'MC', 'CFO'] : ['TL'];
@@ -1055,7 +1092,7 @@ const PROC_TYPES = {
     tierLabel(krw, L) {
       const t = this.tierOf(krw, L), w = n => Number(n).toLocaleString('en-US');
       return ['< ' + w(L.L5) + ' KRW', '≥ ' + w(L.L5) + ' & < ' + w(L.L4) + ' KRW', '≥ ' + w(L.L4) + ' & < ' + w(L.L3) + ' KRW',
-              '≥ ' + w(L.L3) + ' & < ' + w(L.MAX) + ' KRW', '≥ ' + w(L.MAX) + ' KRW'][t];
+              '≥ ' + w(L.L3) + ' KRW'][t];
     },
     // 공식 PDF 결재표의 「Approval Limit」 칸 — 단계마다 해당 구간
     limitCell(stepKey, L) {
@@ -1276,12 +1313,14 @@ function fmtAmtInput(el, intOnly) {
 }
 function amtVal(id) { const n = parseFloat(String(val(id)).replace(/,/g, '')); return isFinite(n) ? n : 0; }
 function round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+/* KRW 는 늘 정수(10-15 사용자 결정) — 반올림(0.5 올림). 부동소수 오차(…49.9999)로 내려가지 않게 소수 6자리에서 먼저 정리한다 */
+function roundKrw(n) { return Math.round(Number((Number(n) || 0).toFixed(6))); }
 function fmtAmt(v, cur) {
   const n = Number(v); if (!isFinite(n) || v === '' || v == null) return '-';
-  return String(cur || '').toUpperCase() === 'KRW' && Number.isInteger(n) ? n.toLocaleString('en-US')
+  return String(cur || '').toUpperCase() === 'KRW' ? roundKrw(n).toLocaleString('en-US')
     : n.toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
 }
-function fmtKrw(v) { const n = Number(v); return v === '' || v == null || !isFinite(n) ? '-' : n.toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+function fmtKrw(v) { const n = Number(v); return v === '' || v == null || !isFinite(n) ? '-' : roundKrw(n).toLocaleString('en-US'); }   // 옛 값(소수)도 정수로 보인다
 function fmtRate(v) { const n = Number(v); return isFinite(n) && n ? n.toLocaleString('en-US', { maximumFractionDigits: 6 }) : '-'; }
 function dotDate(d) { return String(d || '').slice(0, 10).replace(/-/g, '.'); }
 function isYes(v) { return v === true || /^(true|yes|예|1)$/i.test(String(v == null ? '' : v).trim()); }
@@ -1590,6 +1629,106 @@ function rateFor(cur) {
   const cand = PROC_RATES.rows.filter(r => r.currency === cur && r.rate > 0 && r.date <= today).sort((a, b) => a.date < b.date ? 1 : -1);
   return cand[0] ? { rate: cand[0].rate, date: cand[0].date, today: cand[0].date === today } : null;
 }
+/* ── 추천 공급업체 — BP Master 검색(ACC Voucher 「BP 검색」 과 같은 파일 · 같은 검색) ──────────────────
+   파일: STK-DB 문서 루트의 BP-Master_목록_20260930_1756.xlsx(없으면 루트의 BP-Master_목록*.xlsx 중 이름이 가장 큰 것) — ACC Others BP Master 가 관리하고
+   ACC Voucher · BP Master 가 읽는 파일. 열: A Code · B 유형 · C Name 1 · D 한글이름 · E 사업자등록번호 · (F Bank · G Account no. — 읽지 않음) · H 상태.
+   · 공급업체 추천이라 Vendor · Customer 만 싣고 Employee(개인 BP)는 뺀다. 은행 · 계좌는 메모리에도 올리지 않는다(ACC Voucher 10-10 마스킹 원칙보다 한 단계 더).
+   · 고르면 칸에 「NAME / CODE」(양식 예: DAIMLER TRUCK SOUTHERN AFRICA LTD. / KR850089). 저장은 RecommendedSupplier 글자 하나(새 열 없음).
+   · 목록에 없는 업체(신규 등)는 직접 입력 — 칸 아래에 작게 「직접 입력」. 파일을 못 읽으면 검색 단추를 끄고 직접 입력 안내만(상신은 막지 않음). */
+const BP_FILE_NAME = 'BP-Master_목록_20260930_1756.xlsx';
+const BP_FILE_PATTERN = /^BP-Master_목록.*\.xlsx$/i;
+let BPM = { loaded: false, failed: false, list: [] };
+const _sup = {};          // 항목 → { code, name, type, inactive, text } (BP 에서 고른 값) | null
+let _bpFor = null, _bpTimer = null;
+async function loadBpMaster() {
+  try {
+    const t = await token();
+    const driveId = await getDocDriveId();
+    let item = null;
+    try { const meta = await api('/drives/' + driveId + '/root:/' + encodeURIComponent(BP_FILE_NAME) + ':?$select=id,name'); if (meta && meta.id) item = meta; } catch (e) {}
+    if (!item) {
+      const ch = await api('/drives/' + driveId + '/root/children?$select=id,name,lastModifiedDateTime,file&$top=500');
+      item = (ch.value || []).filter(f => f.file && BP_FILE_PATTERN.test(String(f.name || '').normalize('NFC')))
+        .sort((a, b) => String(b.name).localeCompare(String(a.name)) || String(b.lastModifiedDateTime || '').localeCompare(String(a.lastModifiedDateTime || '')))[0] || null;
+    }
+    if (!item) throw new Error('BP 파일을 찾을 수 없음');
+    const res = await fetch(GRAPH + '/drives/' + driveId + '/items/' + item.id + '/content', { headers: { Authorization: 'Bearer ' + t } });
+    if (!res.ok) throw new Error('BP 파일 내려받기 실패 (' + res.status + ')');
+    const wb = XLSX.read(await res.arrayBuffer(), { type: 'array' });
+    const sh = wb.SheetNames.find(x => x === 'BP Master') || wb.SheetNames[0];
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sh], { header: 1, raw: true, defval: '' });
+    const list = [];
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i] || [];
+      const code = String(r[0] || '').trim(), type = String(r[1] || '').trim(), n1 = String(r[2] || '').trim(), n2 = String(r[3] || '').trim();
+      if (!code || !(n1 || n2) || /^(bp )?code$/i.test(code) || /^employee$/i.test(type)) continue;
+      list.push({ code, type, name: n1 || n2, nameKo: n1 ? n2 : '', bizNo: String(r[4] || '').trim(), inactive: /^(비활성|x|yes|y)$/i.test(String(r[7] || '').trim()) });
+    }
+    if (!list.length) throw new Error('BP 목록이 비어 있음');
+    BPM = { loaded: true, failed: false, list };
+    console.log('[BP Master] Loaded:', list.length, '(' + item.name + ')');
+  } catch (e) {
+    BPM = { loaded: true, failed: true, list: [] };
+    console.warn('[BP Master] 로드 실패 — 공급업체는 직접 입력:', e && e.message);
+  }
+  CATS.forEach(supRender);
+  if (document.getElementById('bp-ov').classList.contains('on')) bpSearch(val('bp-q'));
+}
+function supRender(cat) {
+  const el = document.getElementById(cat + '-sup-src'), btn = document.getElementById(cat + '-sup-btn');
+  if (!el) return;
+  const v = val(cat + '-f-supplier'), s = _sup[cat];
+  if (btn) btn.disabled = BPM.failed;
+  if (s && v === s.text) el.innerHTML = '<span class="k">BP Master</span> ' + esc(s.code) + ' · ' + esc(s.type || '-') + (s.inactive ? ' <span class="bp-inact">비활성</span>' : '');
+  else if (v) el.innerHTML = '<span class="m">직접 입력</span>' + (BPM.failed ? ' BP 목록을 불러오지 못했습니다' : '');
+  else el.innerHTML = BPM.failed ? 'BP 목록을 불러오지 못해 직접 입력합니다 — 업체명 / BP 코드' : '';
+}
+function openBpPicker(cat) {
+  if (BPM.failed) return;
+  _bpFor = cat;
+  const q = document.getElementById('bp-q');
+  q.value = '';
+  document.getElementById('bp-ov').classList.add('on');
+  bpSearch('');
+  setTimeout(() => q.focus(), 50);
+}
+function closeBpPicker() { document.getElementById('bp-ov').classList.remove('on'); _bpFor = null; }
+function bpSearch(q) {
+  clearTimeout(_bpTimer);
+  _bpTimer = setTimeout(() => {
+    const el = document.getElementById('bp-res');
+    if (!BPM.loaded) { el.innerHTML = '<div class="bp-empty">BP 목록을 불러오는 중입니다…</div>'; return; }
+    const kw = String(q || '').trim().toLowerCase(), kd = kw.replace(/[^0-9a-z]/g, '');
+    if (!kw) { el.innerHTML = '<div class="bp-empty">BP 코드 · 업체명 · 한글명 · 사업자등록번호로 검색하세요 (' + BPM.list.length.toLocaleString('en-US') + '건)</div>'; return; }
+    const out = [];
+    for (const b of BPM.list) {
+      if (b.code.toLowerCase().includes(kw) || b.name.toLowerCase().includes(kw) || (b.nameKo && b.nameKo.toLowerCase().includes(kw)) ||
+          (kd.length >= 3 && b.bizNo && b.bizNo.replace(/[^0-9a-z]/gi, '').toLowerCase().includes(kd))) { out.push(b); if (out.length >= 50) break; }
+    }
+    out.sort((a, b) => (a.inactive - b.inactive));
+    if (!out.length) { el.innerHTML = '<div class="bp-empty">검색 결과 없음 — 목록에 없는 업체는 창을 닫고 직접 입력하세요.</div>'; return; }
+    el.innerHTML = (out.length >= 50 ? '<div class="bp-more">상위 50건 — 검색어를 더 입력하세요</div>' : '') + out.map(b =>
+      '<div class="bp-it" data-bp="' + esc(b.code) + '" tabindex="0">' +
+        '<div class="c">' + esc(b.code) + ' · ' + esc(b.type || '-') + (b.inactive ? ' <span class="bp-inact">비활성</span>' : '') + '</div>' +
+        '<div class="n">' + esc(b.name) + (b.nameKo ? ' <span class="ko">' + esc(b.nameKo) + '</span>' : '') + '</div>' +
+        '<div class="s">사업자등록번호: ' + esc(b.bizNo || 'Master data 미기재') + '</div></div>').join('');
+  }, 150);
+}
+function selectBp(code) {
+  const b = BPM.list.find(x => x.code === code), cat = _bpFor;
+  if (!b || !cat) return;
+  const text = b.name + ' / ' + b.code;
+  document.getElementById(cat + '-f-supplier').value = text;
+  _sup[cat] = { code: b.code, name: b.name, type: b.type, inactive: b.inactive, text };
+  closeBpPicker();
+  supRender(cat);
+}
+document.addEventListener('click', e => { const it = e.target && e.target.closest && e.target.closest('#bp-res .bp-it[data-bp]'); if (it) selectBp(it.getAttribute('data-bp')); });
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('bp-ov').classList.contains('on')) return;
+  if (e.key === 'Escape') closeBpPicker();
+  else if (e.key === 'Enter' && e.target && e.target.matches && e.target.matches('#bp-res .bp-it')) selectBp(e.target.getAttribute('data-bp'));
+});
 const BASE_CURRENCIES = ['KRW', 'EUR', 'USD'];
 function fillCurrencies(cat) {
   const sel = document.getElementById(cat + '-cur'); if (!sel) return;
@@ -1621,10 +1760,22 @@ function fieldHtml(cat, fd) {
   }
   const ml = fd.max ? ' maxlength="' + fd.max + '"' : '';
   const ph = fd.ph ? ' placeholder="' + esc(fd.ph) + '"' : '';
+  if (fd.picker === 'bp') return '<div class="fld full">' + fieldLabel(fd) +
+    '<div class="sup-row"><input type="text" id="' + fd._id + '"' + ml + ph + ' oninput="supRender(\'' + cat + '\')">' +
+    '<button type="button" class="sup-btn" id="' + cat + '-sup-btn" onclick="openBpPicker(\'' + cat + '\')">🔍 BP 검색</button></div>' +
+    '<div class="sup-src" id="' + cat + '-sup-src"></div></div>';
   const input = fd.type === 'textarea' ? '<textarea id="' + fd._id + '"' + ml + ph + '></textarea>' + (fd.max ? '<div class="hint">최대 ' + fd.max.toLocaleString('en-US') + '자</div>' : '')
     : fd.type === 'date' ? '<input type="date" id="' + fd._id + '" max="' + kstToday() + '">'
     : '<input type="text" id="' + fd._id + '"' + ml + ph + '>';
-  return '<div class="fld full">' + fieldLabel(fd) + input + '</div>';
+  return '<div class="fld' + (fd.half ? '' : ' full') + '">' + fieldLabel(fd) + input + '</div>';
+}
+// half: true 가 이어지는 항목은 한 줄 두 칸(.row) — 767px 이하에서는 aps-mobile 규칙(.row > .fld 100%)으로 위아래
+function formFieldsHtml(cat, flds) {
+  let out = '', run = [];
+  const flush = () => { if (run.length) out += '<div class="row half-row">' + run.join('') + '</div>'; run = []; };
+  flds.forEach(fd => { const h = fieldHtml(cat, fd); if (fd.half) run.push(h); else { flush(); out += h; } });
+  flush();
+  return out;
 }
 function stepBlockHtml(cat, st, i) {
   const ord = '<span id="' + cat + '-ord-' + st.key + '">' + (i + 1) + '차</span>';
@@ -1659,12 +1810,12 @@ function renderForms() {
       '<div class="sec">2. ' + esc(T.fullLabel) + '</div>' +
       (c === 'ssl' ? '<div class="ssl-intro">Required, if the internal customer recommends to procure from one specific supplier with exclusion of competition (Single Source Projects). ' +
         'Mandatory for all requisitions with a volume <b>≥ 500,000 EUR (650,000,000 KRW)</b>.<br>' +
-        '<span style="color:#8a8886">경쟁 없이 특정 공급업체 한 곳에서 구매하려 할 때 작성합니다. 결재선은 아래 금액(KRW 환산)에 따라 양식의 Approval Limit 표대로 자동 구성됩니다.</span></div>' : '') +
-      flds.map(fd => fieldHtml(c, fd)).join('') +
+        '<span style="color:#8a8886">특정 업체 한 곳과 경쟁 없이 거래할 때 작성합니다. 결재선은 KRW 환산 금액에 따라 자동으로 정해집니다.</span></div>' : '') +
+      formFieldsHtml(c, flds) +
       '<div class="sec">3. 금액 (Volume)</div>' + money.map(fd => fieldHtml(c, fd)).join('') +
       '<div class="sec">4. 첨부파일' + (T.attachRequired ? ' <span class="req-att">*</span>' : '') + '</div>' +
-      (T.attachRequired ? '<div class="att-notice one-line" role="note">' + WARN_SVG + '<div><div class="att-notice-main">첨부파일을 1개 이상 반드시 올려 주세요.</div>' +
-        '<div class="att-notice-sub">견적서 · 계약서 · 인보이스 등 근거 자료 — 공식 PDF 출력 때 양식 뒤에 그대로 붙습니다.</div></div></div>' : '') +
+      (T.attachRequired ? '<div class="att-notice one-line" role="note">' + WARN_SVG + '<div><div class="att-notice-main">첨부파일을 1개 이상 올려 주세요.</div>' +
+        '<div class="att-notice-sub">견적서 · 계약서 · 인보이스 등 — 공식 PDF 양식 뒤에 그대로 붙습니다.</div></div></div>' : '') +
       '<div class="drop" onclick="document.getElementById(\'' + c + '-file\').click()">📎 클릭하여 파일 첨부 (파일당 최대 20MB)</div>' +
       '<input type="file" id="' + c + '-file" multiple style="display:none" onchange="onPickFile(\'' + c + '\',this)">' +
       '<div id="' + c + '-filelist"></div>' +
@@ -1684,7 +1835,7 @@ function moneyState(cat) {
   const amt = amtVal(cat + '-amt');
   const rate = cur === 'KRW' ? 1 : (parseFloat(String(val(cat + '-rate')).replace(/,/g, '')) || 0);
   const st = _money[cat];
-  const krw = cur === 'KRW' ? round2(amt) : (rate > 0 ? round2(amt * rate) : 0);
+  const krw = cur === 'KRW' ? roundKrw(amt) : (rate > 0 ? roundKrw(amt * rate) : 0);
   return { cur, amt, rate, krw, manual: cur !== 'KRW' && !!st.manual, date: cur === 'KRW' ? '' : (st.manual ? kstToday() : (st.auto && st.auto.date) || '') };
 }
 function onMoneyChange(cat, why) {
@@ -1708,13 +1859,13 @@ function onMoneyChange(cat, why) {
   const info = document.getElementById(cat + '-rate-info');
   if (info) {
     let h = '';
-    if (cur === 'KRW') h = '<span>원화(KRW) 금액은 그대로 결재 기준 금액이 됩니다.</span>';
-    else if (st.manual) h = '<span class="tag man">직접 수정</span><span>입력한 환율 ' + esc(fmtRate(m.rate)) + ' 로 계산 · 저장됩니다(공식 양식에 「manually entered exchange rate」 로 표시).</span>' +
-      (st.auto ? '<button type="button" class="lnk" onclick="onMoneyChange(\'' + cat + '\',\'reset\')">ACC Voucher 환율(' + esc(dotDate(st.auto.date)) + ' · ' + esc(fmtRate(st.auto.rate)) + ')로 되돌리기</button>' : '');
+    if (cur === 'KRW') h = '<span>원화 금액이 그대로 결재 기준이 됩니다.</span>';
+    else if (st.manual) h = '<span class="tag man">직접 수정</span><span>입력한 환율 ' + esc(fmtRate(m.rate)) + ' 로 계산합니다(공식 양식에 수동 환율로 표시).</span>' +
+      (st.auto ? '<button type="button" class="lnk" onclick="onMoneyChange(\'' + cat + '\',\'reset\')">ACC Voucher 환율(' + esc(dotDate(st.auto.date)) + ' · ' + esc(fmtRate(st.auto.rate)) + ') 로 되돌리기</button>' : '');
     else if (st.auto) h = '<span class="tag auto">ACC Voucher 환율</span><span>' + esc(dotDate(st.auto.date)) + ' 기준 ' + esc(cur) + ' ' + esc(fmtRate(st.auto.rate)) +
-      (st.auto.today ? '' : ' — 오늘 환율이 없어 직전 날짜 값') + '. 필요하면 환율 칸을 직접 고칠 수 있습니다.</span>';
+      (st.auto.today ? '' : ' (오늘 값 없음 → 직전 날짜)') + '. 환율 칸에서 직접 고칠 수 있습니다.</span>';
     else if (!PROC_RATES.loaded) h = '<span>환율 정보를 불러오는 중입니다…</span>';
-    else h = '<span class="tag none">환율 없음</span><span>' + (PROC_RATES.failed ? '환율 파일을 읽지 못했습니다' : esc(cur) + ' 환율 정보가 없습니다') + ' — 환율을 직접 입력해 주세요(BU Admin 문의).</span>';
+    else h = '<span class="tag none">환율 없음</span><span>' + (PROC_RATES.failed ? '환율 파일을 읽지 못했습니다' : esc(cur) + ' 환율 정보가 없습니다') + ' — 환율을 직접 입력해 주세요.</span>';
     info.innerHTML = h;
   }
   renderApprLine(cat);
@@ -1750,8 +1901,7 @@ function renderApprLine(cat) {
   if (note) {
     const t = T.tierOf(m.krw, L), w = n => Number(n).toLocaleString('en-US');
     note.innerHTML = !m.krw ? ''
-      : t === 0 ? '<div class="tier-note info">ℹ️ SSL 은 <b>' + w(L.L5) + ' KRW 이상</b> 구매 건의 필수 대상입니다. 이 금액은 양식의 결재표 기준 미만이라 <b>Team Leader 결재만</b> 진행합니다.</div>'
-      : t === 4 ? '<div class="tier-note warn">⚠️ <b>' + w(L.MAX) + ' KRW 이상</b> — 양식 결재표(Approval Limit)의 범위를 넘는 금액입니다. 결재선은 Team Leader → RBO MC → CFO → RD 로 구성되며, 그 위 승인 절차가 필요한지 Procurement · F&C 와 확인해 주세요.</div>'
+      : t === 0 ? '<div class="tier-note info">ℹ️ SSL 작성 대상은 <b>' + w(L.L5) + ' KRW 이상</b>입니다. 이 금액은 <b>Team Leader 결재만</b> 진행합니다.</div>'
       : '';
   }
 }
@@ -1897,7 +2047,7 @@ function applyConfig(cfg) {
     // 결재 기준 금액 — 설정이 있으면 그 값(오름차순이 아니면 기본값으로 두고 경고)
     const L = Object.assign({}, T.limitDefaults);
     Object.entries(T.limitKeys || {}).forEach(([k, key]) => { const n = cfgNum(cfg, key); if (n != null) L[k] = n; });
-    if (!(L.L5 < L.L4 && L.L4 < L.L3 && L.L3 < L.MAX)) { console.warn('[Config] ' + T.prefix + ' 결재 기준 금액이 오름차순이 아니어서 기본값을 씁니다:', L); PROC_LIMITS[c] = Object.assign({}, T.limitDefaults); }
+    if (!(L.L5 < L.L4 && L.L4 < L.L3)) { console.warn('[Config] ' + T.prefix + ' 결재 기준 금액이 오름차순이 아니어서 기본값을 씁니다:', L); PROC_LIMITS[c] = Object.assign({}, T.limitDefaults); }
     else PROC_LIMITS[c] = L;
   });
 }
@@ -1953,7 +2103,7 @@ async function boot(account) {
     }
     document.getElementById('gate-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    Promise.all([loadEmployees(), loadExchange()]).catch((e) => console.warn('[부팅] 명부 · 환율 로드 실패:', e && e.message));
+    Promise.all([loadEmployees(), loadExchange(), loadBpMaster()]).catch((e) => console.warn('[부팅] 명부 · 환율 로드 실패:', e && e.message));
     await loadMyDelegations();
     document.getElementById('tab-admin').style.display = '';   // 관리자 탭은 늘 보이고, 권한이 없으면 눌렀을 때 안내(GW · ACC Others 방식)
     CATS.forEach(c => {
@@ -2158,6 +2308,7 @@ function clearForm(cat) {
   T.fields.forEach(fd => { const el = document.getElementById(fd.type === 'money' ? cat + '-amt' : cat + '-f-' + fd.key); if (el) el.value = ''; });
   const cur = document.getElementById(cat + '-cur'); if (cur) cur.value = 'KRW';
   _money[cat] = { manual: false, auto: null };
+  _sup[cat] = null; supRender(cat);
   APPR_SLOTS[cat].forEach(n => ['dept', 'team', 'sel', 'name', 'email'].forEach(k => { const el = document.getElementById(cat + '-a' + n + '-' + k); if (el) el.value = ''; }));
   APPR_SLOTS[cat].forEach(n => {
     const t = document.getElementById(cat + '-a' + n + '-team'), p2 = document.getElementById(cat + '-a' + n + '-sel');
@@ -2230,7 +2381,7 @@ async function submitForm(cat) {
       RequestTitle: String(T.titleOf(v)).slice(0, 250), Status: '대기', RequestDate: new Date().toISOString() };
     T.fields.forEach(fd => {
       if (fd.type === 'money') {
-        Object.assign(fields, { [fd.col]: round2(m.amt), Currency: m.cur, ExchangeRate: m.rate, ExchangeRateDate: m.date || '',
+        Object.assign(fields, { [fd.col]: m.cur === 'KRW' ? roundKrw(m.amt) : round2(m.amt), Currency: m.cur, ExchangeRate: m.rate, ExchangeRateDate: m.date || '',
           ExchangeRateManual: !!m.manual, KRWAmount: m.krw, ApprovalTier: T.tierLabel(m.krw, L) });
       } else if (fd.type === 'date') {
         /* 10-15: 목록 열이 「날짜 및 시간」 이어도 날짜가 하루 밀리지 않게 정오(UTC)로 저장한다.
@@ -3155,7 +3306,7 @@ async function exportExcel() {
     const fcols = [];
     T.fields.forEach(fd => {
       if (fd.type === 'money') fcols.push(['Total Volume', f => Number(f[fd.col] || 0), 'num'], ['Currency', f => f.Currency || ''], ['Exchange Rate', f => Number(f.ExchangeRate || 0)],
-        ['Rate Date', f => fmtDay(f.ExchangeRateDate)], ['Rate 직접 입력', f => isYes(f.ExchangeRateManual) ? 'Yes' : ''], ['KRW Amount', f => Number(f.KRWAmount || 0), 'num'], ['Approval Limit', f => f.ApprovalTier || '']);
+        ['Rate Date', f => fmtDay(f.ExchangeRateDate)], ['Rate 직접 입력', f => isYes(f.ExchangeRateManual) ? 'Yes' : ''], ['KRW Amount', f => roundKrw(f.KRWAmount), 'num'], ['Approval Limit', f => f.ApprovalTier || '']);
       else fcols.push([fd.en.replace(/\s*\(.*$/, ''), f => fd.type === 'date' ? fmtDay(f[fd.col]) : _xlText(f[fd.col])]);
     });
     const head = ['번호', 'Title', '신청자 메일', '신청자 이름', '신청자 부서', ...fcols.map(c => c[0]), '첨부', '상태', '신청일', '결재 이력'];
@@ -3174,7 +3325,7 @@ async function exportExcel() {
     ws['!cols'] = head.map((h, i) => ({ wch: i === 0 ? 6 : (h.length > 14 ? 30 : 18) }));
     head.forEach((h, c) => {
       if (!/^(Total Volume|KRW Amount|Exchange Rate)$/.test(h)) return;
-      for (let r = 1; r < rows.length; r++) { const ref = XLSX.utils.encode_cell({ r, c }); if (ws[ref] && typeof ws[ref].v === 'number') { ws[ref].t = 'n'; ws[ref].z = h === 'Exchange Rate' ? '#,##0.0000' : '#,##0.00'; } }
+      for (let r = 1; r < rows.length; r++) { const ref = XLSX.utils.encode_cell({ r, c }); if (ws[ref] && typeof ws[ref].v === 'number') { ws[ref].t = 'n'; ws[ref].z = h === 'Exchange Rate' ? '#,##0.0000' : h === 'KRW Amount' ? '#,##0' : '#,##0.00'; } }
     });
     XLSX.utils.book_append_sheet(wb, ws, T.prefix);
     const n = kstNow(); const p = x => String(x).padStart(2, '0');
