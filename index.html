@@ -528,10 +528,7 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .ssl-intro .en b{color:#7a4f00;font-weight:700;background:#fdeec4;border-radius:3px;padding:0 3px}
 .ssl-intro .ko{font-size:.72rem;line-height:1.6;color:#8a7442;margin-top:4px}
 /* 첨부 안내 — 작은 아이콘 + 굵은 첫 줄 · 흐린 둘째 줄(빨간 문장 대신) */
-.att-hint{display:flex;gap:8px;align-items:flex-start;margin:2px 0 8px}
-.att-hint svg{flex:none;margin-top:2px;color:#0078d4}
-.att-hint .m{font-size:.76rem;font-weight:700;color:#323130;line-height:1.5}
-.att-hint .s{font-size:.7rem;color:#8a8886;line-height:1.5}
+/* 첨부 안내(10-15)는 위 .att-notice.one-line(ACC Others 와 같은 값)을 쓴다 — 옛 .att-hint(클립 아이콘 두 줄)는 없앴다 */
 .fld label .en{font-weight:600}
 .fld label .ko{font-weight:400;color:#605e5c;margin-left:4px}
 .fld label .opt{font-weight:400;color:#8a8886;margin-left:4px;font-size:.7rem}
@@ -622,6 +619,7 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .sslp table.at td.who{font-weight:700;font-size:8.6pt}
 .sslp table.at td.sig{padding:2pt}
 .sslp table.at td.dt{font-size:7.6pt}
+.sslp table.at tr.ex td.lim{color:#6b5310}   /* 추가 결재자 줄(10-15) — 양식 구간 칸 대신 「Additional approval (Step N)」 */
 .sslp table.at tr.endbar td{height:3.5pt;padding:0;background:#bfbfbf;border-left:none;border-right:none}
 .sslp .stamp{display:inline-block;border:1px solid #6b7280;border-radius:3px;padding:1.5pt 4pt;line-height:1.25;font-size:6.6pt;color:#1f2937;text-align:center;white-space:nowrap}
 .sslp .stamp .t{font-weight:700;font-size:6.8pt}
@@ -685,6 +683,10 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
   .chk input { flex: none; margin-top: 2px; }
   .appr-block { padding: 12px; }
   .appr-select-row, .appr-info { grid-template-columns: minmax(0, 1fr); }
+  /* 추가 결재자 블록(10-15 · IT Ticket 과 같은 처리) — 「✕ 삭제」(float:right)가 접힌 제목 아래로 흘러 선택 칸을 좁히지 않게 제목 안에 가둔다 */
+  .appr-block.appr-extra .appr-block-title { display: flow-root; }
+  .appr-block.appr-extra .btn-exdel { margin-left: 8px; padding: 5px 14px; }
+  .appr-help:not([open]) > .appr-help-body { display: none; }
   /* 첨부 목록 — 긴 파일 이름이 줄바꿈되지 않아 「삭제」 단추가 밀리거나 세로로 꺾이고 문서가 넘치던 것(10-10) */
   .fitem { gap: 8px; }
   .fitem > span { min-width: 0; overflow-wrap: anywhere; }
@@ -1079,7 +1081,7 @@ const PROC_TYPES = {
     attachRequired: true,
     fields: [
       { key: 'reqNo',    col: 'ReqNumber',           type: 'text',     req: false, max: 60,
-        en: 'Req-number of the respective requisition', ko: '구매요청 번호', ph: '있으면 입력' },
+        en: 'Req-number of the respective requisition', ko: '구매요청 번호', ph: '예: PR-2026-0153 (없으면 비워 두세요)' },
       { key: 'desc',     col: 'Description',         type: 'textarea', req: true,  max: 1000,
         en: 'Description of product or service (specification, quantity,)', ko: '품목 · 서비스 내용', ph: '예: 2026 Concur service fee (사양 · 수량 포함)' },
       { key: 'supplier', col: 'RecommendedSupplier', type: 'text',     req: true,  max: 200,
@@ -1632,6 +1634,7 @@ async function loadEmployees() {
       rdc: (r['RD'] || '').toString().trim()
     })).filter(r => r.email && r.name);
     CATS.forEach(initDept);
+    CATS.forEach(renderExtraArea);   // 이미 넣어 둔 추가 결재자 칸의 부서 목록도 채운다(10-15)
     console.log('[Employee] 로드:', employeeData.length, '명');
   } catch (e) { console.warn('[Employee] 로드 실패:', e.message); }
   applyFlexApprovers();   // 못 읽었으면 직접 선택 칸을 연다(ACC Others 와 같음)
@@ -1875,19 +1878,22 @@ function renderForms() {
       formFieldsHtml(c, flds) +
       '<div class="sec">3. 금액 (Volume)</div>' + money.map(fd => fieldHtml(c, fd)).join('') +
       '<div class="sec">4. 첨부파일' + (T.attachRequired ? ' <span class="req-att">*</span>' : '') + '</div>' +
-      (T.attachRequired ? '<div class="att-hint" role="note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg><div>' +
-        '<div class="m">첨부파일을 1개 이상 반드시 올려 주세요.</div><div class="s">견적서 · 계약서 · 인보이스 등 근거 자료</div></div></div>' : '') +
+      // 첨부 안내 — ACC Others 의 한 줄 안내(.att-notice.one-line)와 같은 모양: 진한 빨강 경고 삼각형 · 굵은 본문 + 옅은 보조 문구, 좁으면 둘째 문장이 다음 줄로(10-15)
+      (T.attachRequired ? '<div class="att-notice one-line" role="note"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div>' +
+        '<div class="att-notice-main">첨부파일을 1개 이상 반드시 올려 주세요.</div><div class="att-notice-sub">견적서 · 계약서 · 인보이스 등 근거 자료</div></div></div>' : '') +
       '<div class="drop" onclick="document.getElementById(\'' + c + '-file\').click()">📎 클릭하여 파일 첨부 (파일당 최대 20MB)</div>' +
       '<input type="file" id="' + c + '-file" multiple style="display:none" onchange="onPickFile(\'' + c + '\',this)">' +
       '<div id="' + c + '-filelist"></div>' +
       '<div class="sec">5. 결재자 (Approvers)</div>' +
       '<div class="appr-line-preview" id="' + c + '-line-preview"></div>' +
-      T.steps.map((st, i) => stepBlockHtml(c, st, i)).join('') +
+      // 추가 결재자(10-15) — 1차(Team Leader) 바로 다음 · 나머지 고정 단계(MC · CFO · RD) 앞에만, 최대 3명. renderExtraArea 가 그린다
+      T.steps.map((st, i) => stepBlockHtml(c, st, i) + (i === 0 ? '<div id="' + c + '-extra-area"></div>' : '')).join('') +
       '<div class="pform-actions">' +
         '<button class="btn btn-g" onclick="resetForm(\'' + c + '\')">Reset</button>' +
         '<button class="btn btn-p" id="' + c + '-submit" onclick="submitForm(\'' + c + '\')">Submit</button>' +
       '</div></div>';
   }).join('');
+  CATS.forEach(renderExtraArea);   // 추가 결재자 삽입선(10-15)
 }
 
 /* ── 금액 · 환율 · 결재선 미리보기 ───────────────────────── */
@@ -1939,15 +1945,22 @@ function stepsFor(cat, krw) {
 function renderApprLine(cat) {
   const T = PROC_TYPES[cat], L = limitsOf(cat);
   const m = moneyState(cat), steps = stepsFor(cat, m.krw), keys = steps.map(s => s.key);
+  const ex = _extra[cat] || [], nEx = ex.length;
+  // 미리보기 — 1차 다음에 추가 결재자(노란 배지)를 끼운다
+  const line = steps.slice(0, 1).map(st => ({ label: esc(st.role), cls: st.src === 'cfg' ? ' fixed' : '' }))
+    .concat(ex.map(x => ({ label: x.name ? esc(x.name) + ' (추가)' : '추가 결재자 (미지정)', cls: ' extra' })))
+    .concat(steps.slice(1).map(st => ({ label: esc(st.role), cls: st.src === 'cfg' ? ' fixed' : '' })));
   const pv = document.getElementById(cat + '-line-preview');
   if (pv) pv.innerHTML = '<div class="appr-line-title">📋 결재 라인 (' + esc(T.label) + ' · KRW 환산 ' + (m.krw ? esc(fmtKrw(m.krw)) : '0') + ' → ' + esc(T.tierLabel(m.krw, L)) + ')</div>' +
-    '<div class="appr-line-steps">' + steps.map((st, i) => '<span class="line-step"><span class="line-step-badge' + (st.src === 'cfg' ? ' fixed' : '') + '">' + (i + 1) + '차</span><span class="line-step-label">' + esc(st.role) + '</span>' +
-      (i < steps.length - 1 ? '<span class="line-arrow">→</span>' : '') + '</span>').join('') + '</div>';
+    '<div class="appr-line-steps">' + line.map((st, i) => '<span class="line-step"><span class="line-step-badge' + st.cls + '">' + (i + 1) + '차</span><span class="line-step-label">' + st.label + '</span>' +
+      (i < line.length - 1 ? '<span class="line-arrow">→</span>' : '') + '</span>').join('') + '</div>' +
+    extraHelpHtml(cat, nEx, steps);
   T.steps.forEach(st => {
     const b = document.getElementById(cat + '-blk-' + st.key); if (!b) return;
     const on = keys.includes(st.key);
     b.style.display = on ? '' : 'none';
-    const o = document.getElementById(cat + '-ord-' + st.key); if (o && on) o.textContent = (keys.indexOf(st.key) + 1) + '차';
+    const k = keys.indexOf(st.key);
+    const o = document.getElementById(cat + '-ord-' + st.key); if (o && on) o.textContent = (k + 1 + (k > 0 ? nEx : 0)) + '차';
     if (st.src === 'cfg') {
       const a = FIXED[st.cfgKey] || { name: '', email: '' };
       document.getElementById(cat + '-fx-' + st.key + '-name').value = a.name || '';
@@ -1965,6 +1978,119 @@ function renderApprLine(cat) {
       : t === 0 ? '<div class="tier-note info">ℹ️ SSL 작성 대상은 <b>' + w(L.L5) + ' KRW 이상</b>입니다. 이 금액은 <b>Team Leader 결재만</b> 진행합니다.</div>'
       : '';
   }
+}
+
+/* ══ 추가 결재자 (10-15 · IT Ticket · ACC Voucher 「Adding an Additional Approver」 와 같은 방식) ══
+   금액으로 정해지는 결재선(Team Leader → RBO MC → CFO → RD) 중 1차(Team Leader) 바로 다음에 결재자를 최대 3명까지 끼워 넣는다.
+   TL 만인 금액이면 TL 다음(맨 뒤). 차수는 1차 TL, 2~4차 추가 결재자, 그 뒤 MC · CFO · RD 순으로 다시 매긴다.
+   · 값은 DOM 이 아니라 _extra[cat] 배열에 둔다 — 금액을 바꿔 결재선을 다시 그려도 고른 부서 · 팀 · 직원이 유지된다.
+   · 결재행(SSL_Approvals)은 고정 단계와 같은 열로 쓰고 역할만 「Additional Approver」 — 결재 진행(다음 「대기(잠김)」 를 차수 순으로 푼다) ·
+     결재함 · 상세 · APS · 공식 PDF 가 별도 처리 없이 읽는다.
+   · 신청자 · 결재선의 다른 결재자 · 다른 추가 결재자와 같은 사람은 지정할 수 없다(고를 때 · 상신할 때 모두 확인). */
+const MAX_EXTRA = 3;
+const EXTRA_ROLE = 'Additional Approver';
+const _extra = {}, _extraHelpOpen = {};
+CATS.forEach(c => { _extra[c] = []; _extraHelpOpen[c] = false; });
+let _exSeq = 0;
+function extraHelpHtml(cat, n, steps) {
+  const after = steps[0] ? steps[0].role : 'Team Leader', before = steps.slice(1).map(s => s.role);
+  return '<details class="appr-help"' + (_extraHelpOpen[cat] ? ' open' : '') + ' ontoggle="_extraHelpOpen[\'' + cat + '\']=this.open">' +
+    '<summary><span class="chev">▶</span>Adding an Additional Approver<span class="used">' + n + ' of ' + MAX_EXTRA + ' used</span></summary>' +
+    '<div class="appr-help-body">' +
+      '<div style="margin-bottom:5px">Some requests may need separate or additional approval — e.g. from the budget owner, the system owner or a designated contact. ' +
+      'In that case, click the dashed <span style="color:#0078d4;font-weight:700">＋ 결재자 추가</span> line below to add an approver right after the ' + esc(after) + '.</div>' +
+      '<table>' +
+        '<tr><td class="k">Where</td><td>' + (before.length ? 'Between the ' + esc(after) + ' (1st step) and the ' + esc(before[0]) + ' only.' : 'After the ' + esc(after) + ' (1st step).') + ' The approval line by amount stays as it is.</td></tr>' +
+        '<tr><td class="k">How</td><td>Select Department → Team → Employee. The requester and approvers already in the line cannot be added.</td></tr>' +
+        '<tr><td class="k">Order</td><td>Approval runs top to bottom. ' + (before.length ? 'The following steps (' + esc(before.join(' → ')) + ') move down by one for each approver added, and each' : 'Each') + ' approver is notified only after the previous step is approved.</td></tr>' +
+        '<tr><td class="k">Scope</td><td>Applies to this request only. Use <span style="color:#a4262c;font-weight:700">✕ 삭제</span> to remove it before submitting.</td></tr>' +
+        '<tr><td class="k">Limit</td><td>Up to <b>' + MAX_EXTRA + '</b> additional approvers per request. Once the limit is reached, the dashed line is disabled until you remove one.</td></tr>' +
+      '</table>' +
+    '</div>' +
+  '</details>';
+}
+function renderExtraArea(cat) {
+  const area = document.getElementById(cat + '-extra-area'); if (!area) return;
+  const list = _extra[cat] || [];
+  const depts = [...new Set(employeeData.map(e => e.dept).filter(Boolean))].sort();
+  const deptOpts = depts.map(d => '<option value="' + esc(d) + '">' + esc(d) + '</option>').join('');
+  const full = list.length >= MAX_EXTRA;
+  area.innerHTML = list.map((x, i) =>
+    '<div class="appr-block appr-extra" id="' + x.uid + '-blk">' +
+      '<div class="appr-block-title">' + (i + 2) + '차 결재자 <span class="req-mark">*</span><span class="appr-tag extra">추가 지정</span> <span class="hint">— ' + esc(EXTRA_ROLE) + '</span>' +
+        '<span class="btn-exdel" role="button" tabindex="0" onclick="exDel(\'' + cat + '\',\'' + x.uid + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();exDel(\'' + cat + '\',\'' + x.uid + '\')}">✕ 삭제</span></div>' +
+      '<div class="appr-select-row">' +
+        '<select id="' + x.uid + '-dept" onchange="exDept(\'' + cat + '\',\'' + x.uid + '\')"><option value="">부서</option>' + deptOpts + '</select>' +
+        '<select id="' + x.uid + '-team" onchange="exTeam(\'' + cat + '\',\'' + x.uid + '\')" disabled><option value="">팀</option></select>' +
+        '<select id="' + x.uid + '-person" onchange="exPerson(\'' + cat + '\',\'' + x.uid + '\')" disabled><option value="">직원 선택</option></select>' +
+      '</div>' +
+      '<div class="appr-info">' +
+        '<input type="text" id="' + x.uid + '-name" value="' + esc(x.name) + '" readonly placeholder="이름">' +
+        '<input type="email" id="' + x.uid + '-email" value="' + esc(x.email) + '" readonly placeholder="이메일">' +
+      '</div></div>').join('') +
+    (full
+      ? '<div class="appr-insert is-full" title="추가 결재자는 최대 ' + MAX_EXTRA + '명까지 지정할 수 있습니다"><span class="appr-insert-line"></span><span class="appr-insert-btn">Maximum ' + MAX_EXTRA + ' reached</span><span class="appr-insert-line"></span></div>'
+      : '<div class="appr-insert" role="button" tabindex="0" onclick="exAdd(\'' + cat + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();exAdd(\'' + cat + '\')}" title="1차 결재자 다음에 결재자 추가"><span class="appr-insert-line"></span><span class="appr-insert-btn"><span class="appr-insert-plus">+</span> 결재자 추가</span><span class="appr-insert-line"></span></div>');
+  // 다시 그린 뒤 보관해 둔 부서 → 팀 → 직원 선택을 되살린다
+  list.forEach(x => {
+    const d = document.getElementById(x.uid + '-dept'), t = document.getElementById(x.uid + '-team'), pe = document.getElementById(x.uid + '-person');
+    if (!d || !t || !pe || !x.dept) return;
+    d.value = x.dept; _exFillTeams(x.dept, t); t.disabled = false;
+    if (!x.team) return;
+    t.value = x.team; _exFillPeople(x.dept, x.team, pe); pe.disabled = false;
+    if (x.email) pe.value = x.email;
+  });
+}
+function _exFillTeams(dept, sel) {
+  const teams = [...new Set(employeeData.filter(e => e.dept === dept).map(e => e.team).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">팀</option>' + teams.map(t => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
+}
+function _exFillPeople(dept, team, sel) {
+  const people = employeeData.filter(e => e.dept === dept && e.team === team);
+  sel.innerHTML = '<option value="">직원 선택</option>' + people.map(e => '<option value="' + esc(e.email) + '">' + esc(e.name) + '</option>').join('');
+}
+function _ex(cat, uid) { return (_extra[cat] || []).find(x => x.uid === uid); }
+function _exRedraw(cat) { renderExtraArea(cat); renderApprLine(cat); }
+function exAdd(cat) {
+  if ((_extra[cat] || []).length >= MAX_EXTRA) return;
+  _extra[cat].push({ uid: cat + '-ex' + (++_exSeq), dept: '', team: '', name: '', email: '' });
+  _exRedraw(cat);
+}
+function exDel(cat, uid) { _extra[cat] = (_extra[cat] || []).filter(x => x.uid !== uid); _exRedraw(cat); }
+function exDept(cat, uid) {
+  const x = _ex(cat, uid); if (!x) return;
+  x.dept = document.getElementById(uid + '-dept').value; x.team = ''; x.name = ''; x.email = '';
+  _exRedraw(cat);
+}
+function exTeam(cat, uid) {
+  const x = _ex(cat, uid); if (!x) return;
+  x.team = document.getElementById(uid + '-team').value; x.name = ''; x.email = '';
+  _exRedraw(cat);
+}
+// 지금 결재선의 고정 결재자(금액 기준 단계) — 이메일 · 역할
+function _fixedApprovers(cat) {
+  return stepsFor(cat, moneyState(cat).krw).map(st => {
+    const email = st.src === 'cfg' ? ((FIXED[st.cfgKey] || {}).email || '') : val(cat + '-a' + st.slot + '-email');
+    return { email: String(email || '').trim().toLowerCase(), role: st.role };
+  }).filter(a => a.email);
+}
+// 추가 결재자가 신청자 · 고정 결재자 · 다른 추가 결재자와 같은 사람인지 — 같으면 그 사유, 아니면 ''
+function _exDupWhy(cat, x) {
+  const em = String(x.email || '').trim().toLowerCase(); if (!em) return '';
+  if (meList().includes(em)) return '신청자 본인';
+  const f = _fixedApprovers(cat).find(a => a.email === em); if (f) return '결재선의 ' + f.role;
+  const i = (_extra[cat] || []).findIndex(y => y !== x && String(y.email || '').trim().toLowerCase() === em);
+  if (i >= 0) return (i + 2) + '차 추가 결재자';
+  return '';
+}
+function exPerson(cat, uid) {
+  const x = _ex(cat, uid); if (!x) return;
+  const email = document.getElementById(uid + '-person').value;
+  const e = employeeData.find(r => r.email === email);
+  x.email = e ? e.email : ''; x.name = e ? e.name : '';
+  const why = _exDupWhy(cat, x);
+  if (why) { const nm = x.name; x.email = ''; x.name = ''; alert((why === '신청자 본인' ? '신청자 본인은 추가 결재자로 지정할 수 없습니다.' : nm + ' 님은 이미 ' + why + '입니다.') + '\n추가 결재자는 신청자 · 결재선의 다른 결재자와 다른 사람으로 지정해 주세요.'); }
+  _exRedraw(cat);
 }
 
 /* ── 결재자 직접 선택(Flex 명부에서 못 찾을 때) — ACC Others 와 같은 부서 → 팀 → 직원 ── */
@@ -2379,6 +2505,7 @@ function clearForm(cat) {
   document.getElementById(cat + '-date').value = kstToday();
   document.getElementById(cat + '-writer').value = (user && user.name) || '';
   _files[cat] = []; renderFiles(cat);
+  _extra[cat] = []; renderExtraArea(cat);   // 추가 결재자도 비운다(10-15)
   applyFlexApprovers();
   onMoneyChange(cat, 'reset');
 }
@@ -2424,6 +2551,18 @@ function buildApprovers(cat) {
   });
   if (cfgMiss.length) throw new Error('결재자 정보를 불러오지 못해 상신할 수 없습니다:\n· ' + cfgMiss.join('\n· ') + '\n\nsystem_config_final.xlsx 설정을 BU Admin · IT팀에 확인해 주세요.');
   if (bad.length) throw new Error('결재자를 지정해 주세요: ' + bad.join(', '));
+  // 추가 결재자(10-15) — 1차 바로 다음에 끼우고 차수를 다시 매긴다(1차 TL · 2~4차 추가 · 그 뒤 MC · CFO · RD)
+  const ex = (_extra[cat] || []).slice();
+  const exMiss = ex.findIndex(x => !x.email);
+  if (exMiss >= 0) throw new Error((exMiss + 2) + '차 추가 결재자를 지정하거나 「✕ 삭제」로 지워 주세요.');
+  for (let i = 0; i < ex.length; i++) {
+    const why = _exDupWhy(cat, ex[i]);
+    if (why) throw new Error((i + 2) + '차 추가 결재자(' + ex[i].name + ') — ' + (why === '신청자 본인' ? '신청자 본인은 지정할 수 없습니다.' : '이미 ' + why + ' 결재자입니다.') + '\n다른 사람을 지정하거나 「✕ 삭제」로 지워 주세요.');
+  }
+  if (ex.length) {
+    out.splice(1, 0, ...ex.map(x => ({ name: x.name || x.email, email: x.email, role: EXTRA_ROLE, dept: deptOf(x.email) || x.dept || '', key: 'EXTRA' })));
+    out.forEach((a, i) => { a.order = i + 1; });
+  }
   return out;
 }
 async function submitForm(cat) {
@@ -2485,7 +2624,7 @@ async function submitForm(cat) {
       throw new Error('결재선 생성이 완료되지 않아 신청을 자동 철회했습니다.\n잠시 후 다시 상신해 주세요.');
     }
     _logged = true;
-    aoAudit(cat, '상신', { 신청번호: title, id: String(reqId), 제목: String(fields.RequestTitle || '').slice(0, 200), 결재단계: approvers.length, 결재구간: fields.ApprovalTier, 첨부: links.length });
+    aoAudit(cat, '상신', { 신청번호: title, id: String(reqId), 제목: String(fields.RequestTitle || '').slice(0, 200), 결재단계: approvers.length, 추가결재자: approvers.filter(a => a.role === EXTRA_ROLE).length, 결재구간: fields.ApprovalTier, 첨부: links.length });
     showAlert('상신되었습니다.', title);
     resetFormSilent(cat);
     switchTab('my');
@@ -3201,15 +3340,21 @@ function sslPdfPages(f, rows, L) {
   const col = '<colgroup><col style="width:95pt"><col style="width:80pt"><col style="width:97pt"><col style="width:63pt"><col style="width:105pt"><col style="width:89.5pt"></colgroup>';
   const head = '<table class="at">' + col + '<thead><tr><th>Approval Limit<sup>1</sup></th><th>Approver</th><th>Name</th><th>Department</th><th>Signature</th><th>Date</th></tr></thead></table>';
   // 결재행 → 단계(역할 이름으로 맞춘다 · 대리 꼬리 제거)
-  const byKey = {};
-  (rows || []).forEach(r => { const a = r.fields || r; const base = aacRoleBase(a.ApproverRole).trim(); const st = T.steps.find(s => s.role === base); if (st && !byKey[st.key]) byKey[st.key] = a; });
-  const body = '<table class="at">' + col + '<tbody>' + T.steps.map(st => {
-    const a = byKey[st.key];
+  const byKey = {}, extras = [];
+  (rows || []).forEach(r => { const a = r.fields || r; const base = aacRoleBase(a.ApproverRole).trim();
+    if (base === EXTRA_ROLE) { extras.push(a); return; }   // 추가 결재자(10-15) — 차수 순으로 Team Leader 줄 바로 아래에
+    const st = T.steps.find(s => s.role === base); if (st && !byKey[st.key]) byKey[st.key] = a; });
+  extras.sort((x, y) => (Number(x.ApprovalOrder) || 0) - (Number(y.ApprovalOrder) || 0));
+  const tr = (limit, role, a, cls) => {
     const ok = a && (a.Status || '').trim() === '승인';
-    return '<tr><td class="lim">' + T.limitCell(st.key, L) + '</td><td class="lim">' + esc(st.role) + '</td>' +
+    return '<tr class="' + (cls || '') + '"><td class="lim">' + limit + '</td><td class="lim">' + role + '</td>' +
       '<td class="who">' + (a ? esc(a.ApproverName || '') : '') + '</td><td class="who">' + (a ? esc(a.ApproverDept || '') : '') + '</td>' +
       '<td class="sig">' + (a ? sslStampHtml(a) : '') + '</td><td class="dt">' + (ok && a.ApprovalDate ? esc(dotDate(fmtDate(a.ApprovalDate))) : '') + '</td></tr>';
-  }).join('') + '<tr class="endbar"><td colspan="6"></td></tr></tbody></table>';
+  };
+  const exRows = extras.map(a => tr('Additional approval<br>(Step ' + esc(String(a.ApprovalOrder || '')) + ')', esc(EXTRA_ROLE), a, 'ex'));
+  const body = '<table class="at">' + col + '<tbody>' + T.steps.map((st, i) =>
+    tr(T.limitCell(st.key, L), esc(st.role), byKey[st.key]) + (i === 0 ? exRows.join('') : '')
+  ).join('') + '<tr class="endbar"><td colspan="6"></td></tr></tbody></table>';
   const fn = '<div class="fn"><div class="rule"></div><sup>1</sup> If a Blanket Order is created by NPM Procurement DTAG with a specific supplier, the single source letter should be used.<br>&nbsp;&nbsp;It is the responsibility of the originator of the requisition to meet the effective regulations.</div>';
   const ft = '<div class="ft">NPM Procurement: Single Source Letter of Justification<span class="r">Valid as of:</span><br>04/2022</div>';
   const over = (f.Status || '').trim() && (f.Status || '').trim() !== '승인완료' ? '<div class="over">' + esc(f.Title || '') + ' · ' + esc((f.Status || '').trim() === '대기' ? 'IN APPROVAL' : (f.Status || '').trim() === '반려' ? 'REJECTED' : (f.Status || '').trim() === '철회' ? 'WITHDRAWN' : f.Status) + '</div>'
