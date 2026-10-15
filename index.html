@@ -325,33 +325,29 @@ body.rd-rule .appr-line-preview.rd-only{display:block}
 .appr-role{font-weight:600;font-size:13px;color:#323130}
 
 /* ── 결재 라인 · 결재자 블록 — APS 공통 (ACC Voucher 기준, 09-30) ──
-   결재 라인 미리보기(아이콘 · 결재 라인 · KRW 칩 · 구간 태그 + N차 배지 › …)와 결재자 블록 제목(N차 결재자 · 자동 지정/직접 선택 알약 · — 역할)을
+   결재 라인 미리보기(📋 결재 라인 (금액 기준 자동 구성) + 오른쪽 위 KRW 금액 칩 · N차 배지 → …)와 결재자 블록 제목(N차 결재자 · 자동 지정/직접 선택 알약 · — 역할)을
    ACC Voucher 와 같은 모양으로 맞춘다. 시스템마다 달랐던 표시(제목 앞 파란 점, "(고정)" 글자, 회색 배지)는 쓰지 않는다.
    값은 acc_voucher/index.html 의 .appr-block · .appr-block-title · .line-step* · .appr-select-row · .appr-info 그대로. */
 .appr-line-preview{background:#f0f6ff;border:1px solid #c7e0f4;border-radius:6px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#323130}
 .appr-line-title{font-weight:600;color:#0078d4;margin-bottom:6px;font-size:12px}
-/* 결재 라인 머리(10-16) — 📋 글자 줄 대신 아이콘 · 제목 · KRW 금액 칩 · 구간 태그. 금액이 없으면 칩은 「KRW —」, 태그 자리에 안내 문구. */
-.appr-line-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 10px;padding:0 0 9px;border-bottom:1px solid #d6e6f6}
-.appr-line-head .appr-line-title{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:12.5px;font-weight:700;color:#0b3d6e;letter-spacing:-.1px}
-.appr-line-ico{flex:none;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:#0a66c2;color:#fff}
-.appr-line-type{font-size:10.5px;color:#7a8794;font-weight:500}
-.appr-line-meta{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;margin-left:auto;min-width:0}
-.appr-line-amt{display:inline-flex;align-items:baseline;gap:5px;background:#fff;border:1px solid #b9d5f0;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700;color:#0b3d6e;font-variant-numeric:tabular-nums;white-space:nowrap;box-shadow:0 1px 1px rgba(10,102,194,.06)}
+.appr-line-steps{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+/* 결재 라인 머리(10-16 v10) — BP Master 와 같은 「📋 결재 라인 (… 자동 구성)」 제목 줄 그대로, 오른쪽 끝에만 KRW 금액 칩. 좁으면 칩이 제목 아래로 내려간다. */
+.appr-line-title.has-amt{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.appr-line-amt{display:inline-flex;align-items:baseline;gap:5px;margin-left:auto;background:#fff;border:1px solid #b9d5f0;border-radius:999px;padding:1px 10px;font-size:12px;font-weight:700;color:#0b3d6e;font-variant-numeric:tabular-nums;white-space:nowrap;box-shadow:0 1px 1px rgba(10,102,194,.06)}
 .appr-line-amt .cur{font-size:10px;font-weight:600;color:#5b7a99;letter-spacing:.3px}
 .appr-line-amt.empty{color:#a19f9d;border-style:dashed;border-color:#c8d6e5;box-shadow:none}
-.appr-line-tier{display:inline-flex;align-items:center;font-size:10.5px;font-weight:600;color:#0b5fa5;background:#e1effc;border-radius:4px;padding:2px 7px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.appr-line-tier.t0{color:#605e5c;background:#f0efee}
-.appr-line-tier.t3{color:#7a4b00;background:#fdf0d5}
-.appr-line-hint{font-size:11px;color:#7a8794}
-@media (max-width:640px){.appr-line-meta{margin-left:0;flex-basis:100%}}
-.appr-line-steps{display:flex;flex-wrap:wrap;gap:6px 2px;align-items:center}
+.appr-line-amt.empty .cur{color:#a19f9d}
+/* 작성 대상 최소 금액 미만(10-16) — 결재 배지 대신 회색 「결재 불필요」 알약 + 한 줄 안내 */
+.appr-line-none{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;color:#605e5c;font-size:.75rem}
+.appr-none-pill{display:inline-block;background:#8a8886;color:#fff;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700}
+.appr-line-preview.is-none{background:#f6f6f5;border-color:#e1dfdd}
+.appr-line-preview.is-none .appr-line-title{color:#605e5c}
 .line-step{display:inline-flex;align-items:center;gap:4px;margin:0 4px 0 0}
 .line-step-badge{display:inline-block;background:#0078d4;color:#fff;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700;margin:0}
 .line-step-badge.fixed{background:#107c10}
 .line-step-badge.extra{background:#d9a41a}
 .line-step-label{font-size:.75rem;color:#323130}
 .line-arrow{color:#a19f9d;font-size:13px;margin:0}
-.line-arrow svg{display:block}
 .appr-block{background:#fff;border:1px solid #edebe9;border-radius:8px;padding:14px 16px;margin-bottom:10px}
 .appr-block.appr-fixed{background:#f0f6ff;border-color:#c7e0f4}
 .appr-block-title{display:block;font-size:12px;font-weight:700;color:#323130;margin-bottom:10px;line-height:1.5}
@@ -565,6 +561,8 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .cfg-miss{font-size:11px;color:#a4262c;margin:0 0 6px;line-height:1.5}
 .pform-actions{text-align:right;margin-top:20px}
 .pform-actions .btn-p{padding:9px 26px;margin-left:6px}
+/* 작성 대상 최소 금액 미만(10-16) — Submit 을 회색으로 막는다(사유는 title 툴팁) */
+.btn-p.is-blocked,.btn-p.is-blocked:disabled{background:#c8c6c4;color:#fff;opacity:1;cursor:not-allowed}
 .req-att{color:#a4262c;font-weight:700}
 .half-row > .fld{margin-bottom:13px}
 .half-row > .fld label{white-space:normal}
@@ -1121,7 +1119,7 @@ const PROC_TYPES = {
       { key: 'RD',  role: 'RD',               src: 'cfg', cfgKey: 'PROCUREMENT_RD' },
     ],
     /* 결재 기준(양식의 Approval Limit 표 · 사용자 결정 10-15): 설정 키 PROCUREMENT_SSL_LIMIT_L5 · _L4 · _L3 · _MAX(B열 숫자)가 있으면 그 값.
-       < L5            → Team Leader 만(SSL 필수 대상 아님 안내)
+       < L5            → 결재 없음 — SSL 작성 대상이 아니라 상신할 수 없다(10-16 사용자 결정: 화면 「결재 불필요」 · Submit 비활성 · 저장 경로에서도 막는다)
        L5 ~ < L4       → Team Leader
        L4 ~ < L3       → Team Leader → RBO MC → CFO
        L3 이상          → Team Leader → RBO MC → CFO → RD (10-15: 2,600,000,000 KRW 이상 경고 · 구간은 없앴다 — 상한 없이 같은 4단계)
@@ -1132,8 +1130,10 @@ const PROC_TYPES = {
     tierOf(krw, L) { return krw >= L.L3 ? 3 : krw >= L.L4 ? 2 : krw >= L.L5 ? 1 : 0; },
     approvalRule(krw, L) {
       const t = this.tierOf(krw, L);
-      return t >= 3 ? ['TL', 'MC', 'CFO', 'RD'] : t === 2 ? ['TL', 'MC', 'CFO'] : ['TL'];
+      return t >= 3 ? ['TL', 'MC', 'CFO', 'RD'] : t === 2 ? ['TL', 'MC', 'CFO'] : t === 1 ? ['TL'] : [];
     },
+    // 작성 대상 최소 금액(KRW) — 이 금액 미만은 결재선이 없고(approvalRule → []) 상신할 수 없다
+    minOf(L) { return L.L5; },
     tierLabel(krw, L) {
       const t = this.tierOf(krw, L), w = n => Number(n).toLocaleString('en-US');
       return ['< ' + w(L.L5) + ' KRW', '≥ ' + w(L.L5) + ' & < ' + w(L.L4) + ' KRW', '≥ ' + w(L.L4) + ' & < ' + w(L.L3) + ' KRW',
@@ -1965,43 +1965,57 @@ function onMoneyChange(cat, why) {
   renderApprLine(cat);
 }
 function limitsOf(cat) { return PROC_LIMITS[cat] || PROC_TYPES[cat].limitDefaults; }
+/* 결재선 단계 — 금액이 아직 없으면(0 · 빈 칸 · 환율 없음) 「정해지기 전」 이라 첫 구간(작성 대상 최소 금액)의 단계를 보여 준다.
+   금액이 있고 최소 금액 미만이면 approvalRule 이 [] — 결재선 없음(상신 불가). */
 function stepsFor(cat, krw) {
-  const T = PROC_TYPES[cat], keys = T.approvalRule(krw, limitsOf(cat));
+  const T = PROC_TYPES[cat], L = limitsOf(cat), keys = T.approvalRule(krw > 0 ? krw : T.minOf(L), L);
   return T.steps.filter(s => keys.includes(s.key));
 }
-/* 결재 라인 머리(10-16) — 아이콘 · 「결재 라인」 · KRW 금액 칩 · 구간 태그. 구간 경계는 결재 판정과 같은 limitsOf 값(PROCUREMENT_SSL_LIMIT_*)에서 만든다.
-   항목이 둘 이상일 때만 항목 이름을 작게 붙인다(화면 머리에 이미 항목 이름이 있다). 정확한 경계(≥ · <)는 구간 태그 title 에 둔다. */
-const LINE_ICO = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="3.5" cy="3.5" r="1.8"/><circle cx="12.5" cy="12.5" r="1.8"/><path d="M5.3 3.5H10a2.5 2.5 0 0 1 0 5H6a2.5 2.5 0 0 0 0 5h4.7"/></svg>';
-const LINE_CHEV = '<svg width="8" height="10" viewBox="0 0 8 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 1.5 6 5 2.5 8.5"/></svg>';
-function apprTierText(t, L) {
-  const w = n => Number(n).toLocaleString('en-US');
-  return t === 0 ? w(L.L5) + ' 미만' : t === 1 ? w(L.L5) + ' ~ ' + w(L.L4) + ' 구간' : t === 2 ? w(L.L4) + ' ~ ' + w(L.L3) + ' 구간' : w(L.L3) + ' 이상';
+// 작성 대상 최소 금액 미만인지 — 금액이 없을 때는 false(필수 항목 확인이 따로 안내한다)
+function belowMin(cat, krw) {
+  const T = PROC_TYPES[cat], L = limitsOf(cat);
+  return krw > 0 && krw < T.minOf(L);
 }
+function belowMinMsg(cat) {
+  const T = PROC_TYPES[cat];
+  return Number(T.minOf(limitsOf(cat))).toLocaleString('en-US') + ' KRW 미만은 ' + T.label + ' 작성 대상이 아닙니다.';
+}
+// Submit 버튼 — 최소 금액 미만이면 회색 · 누를 수 없음 · 사유 툴팁(상신 중에는 그대로 비활성)
+function syncSubmit(cat) {
+  const btn = document.getElementById(cat + '-submit'); if (!btn) return;
+  const low = belowMin(cat, moneyState(cat).krw);
+  btn.disabled = _submitting || low;
+  btn.classList.toggle('is-blocked', low);
+  if (low) btn.title = belowMinMsg(cat) + ' 상신할 수 없습니다.'; else btn.removeAttribute('title');
+}
+/* 결재 라인 머리(10-16 v10) — BP Master 「📋 결재 라인 (BP Type 기준 자동 구성)」 과 같은 제목 줄, 오른쪽 끝에 KRW 금액 칩만 더한다.
+   칩 title 에 이 금액이 속한 구간 경계(≥ · <, limitsOf = PROCUREMENT_SSL_LIMIT_* · 기본값)를 둔다. */
 function apprLineHeadHtml(T, krw, L) {
-  const t = T.tierOf(krw, L);
-  return '<div class="appr-line-head">' +
-    '<span class="appr-line-title"><span class="appr-line-ico">' + LINE_ICO + '</span>결재 라인</span>' +
-    (CATS.length > 1 ? '<span class="appr-line-type">' + esc(T.label) + '</span>' : '') +
-    '<span class="appr-line-meta">' +
-      (krw ? '<span class="appr-line-amt"><span class="cur">KRW</span><span class="num">' + esc(fmtKrw(krw)) + '</span></span>' +
-             '<span class="appr-line-tier t' + t + '" title="' + esc(T.tierLabel(krw, L)) + '">' + esc(apprTierText(t, L)) + '</span>'
-           : '<span class="appr-line-amt empty"><span class="cur">KRW</span><span class="num">—</span></span>' +
-             '<span class="appr-line-hint">금액을 입력하면 결재 라인이 정해집니다</span>') +
-    '</span></div>';
+  return '<div class="appr-line-title has-amt"><span>📋 결재 라인 (금액 기준 자동 구성)</span>' +
+    (krw ? '<span class="appr-line-amt" title="' + esc(T.tierLabel(krw, L)) + '"><span class="cur">KRW</span><span class="num">' + esc(fmtKrw(krw)) + '</span></span>'
+         : '<span class="appr-line-amt empty" title="금액을 입력하면 결재 라인이 정해집니다"><span class="cur">KRW</span><span class="num">—</span></span>') +
+    '</div>';
 }
 function renderApprLine(cat) {
   const T = PROC_TYPES[cat], L = limitsOf(cat);
-  const m = moneyState(cat), steps = stepsFor(cat, m.krw), keys = steps.map(s => s.key);
-  const ex = _extra[cat] || [], nEx = ex.length;
+  const m = moneyState(cat), low = belowMin(cat, m.krw);
+  const steps = low ? [] : stepsFor(cat, m.krw), keys = steps.map(s => s.key);
+  // 최소 금액 미만이면 추가 결재자 칸 · 삽입선 · 안내를 숨긴다 — _extra 는 그대로 두어 금액을 올리면 되살아난다
+  const ex = low ? [] : (_extra[cat] || []), nEx = ex.length;
+  const exArea = document.getElementById(cat + '-extra-area'); if (exArea) exArea.style.display = low ? 'none' : '';
   // 미리보기 — 1차 다음에 추가 결재자(노란 배지)를 끼운다
   const line = steps.slice(0, 1).map(st => ({ label: esc(st.role), cls: st.src === 'cfg' ? ' fixed' : '' }))
     .concat(ex.map(x => ({ label: x.name ? esc(x.name) + ' (추가)' : '추가 결재자 (미지정)', cls: ' extra' })))
     .concat(steps.slice(1).map(st => ({ label: esc(st.role), cls: st.src === 'cfg' ? ' fixed' : '' })));
   const pv = document.getElementById(cat + '-line-preview');
-  if (pv) pv.innerHTML = apprLineHeadHtml(T, m.krw, L) +
-    '<div class="appr-line-steps">' + line.map((st, i) => '<span class="line-step"><span class="line-step-badge' + st.cls + '">' + (i + 1) + '차</span><span class="line-step-label">' + st.label + '</span>' +
-      (i < line.length - 1 ? '<span class="line-arrow" aria-hidden="true">' + LINE_CHEV + '</span>' : '') + '</span>').join('') + '</div>' +
-    extraHelpHtml(cat, nEx, steps);
+  if (pv) {
+    pv.classList.toggle('is-none', low);
+    pv.innerHTML = apprLineHeadHtml(T, m.krw, L) + (low
+      ? '<div class="appr-line-none"><span class="appr-none-pill">결재 불필요</span><span>' + esc(belowMinMsg(cat)) + '</span></div>'
+      : '<div class="appr-line-steps">' + line.map((st, i) => '<span class="line-step"><span class="line-step-badge' + st.cls + '">' + (i + 1) + '차</span><span class="line-step-label">' + st.label + '</span>' +
+          (i < line.length - 1 ? '<span class="line-arrow">→</span>' : '') + '</span>').join('') + '</div>' +
+        extraHelpHtml(cat, nEx, steps));
+  }
   T.steps.forEach(st => {
     const b = document.getElementById(cat + '-blk-' + st.key); if (!b) return;
     const on = keys.includes(st.key);
@@ -2020,11 +2034,11 @@ function renderApprLine(cat) {
   });
   const note = document.getElementById(cat + '-tier-note');
   if (note) {
-    const t = T.tierOf(m.krw, L), w = n => Number(n).toLocaleString('en-US');
-    note.innerHTML = !m.krw ? ''
-      : t === 0 ? '<div class="tier-note info">ℹ️ SSL 작성 대상은 <b>' + w(L.L5) + ' KRW 이상</b>입니다. 이 금액은 <b>Team Leader 결재만</b> 진행합니다.</div>'
-      : '';
+    const w = n => Number(n).toLocaleString('en-US');
+    note.innerHTML = low ? '<div class="tier-note warn">⚠️ <b>' + w(T.minOf(L)) + ' KRW 미만</b>은 ' + esc(T.prefix) + ' 작성 대상이 아니어서 <b>상신할 수 없습니다</b>. ' +
+      esc(T.prefix) + ' 작성 대상은 ' + w(T.minOf(L)) + ' KRW 이상입니다.</div>' : '';
   }
+  syncSubmit(cat);
 }
 
 /* ══ 추가 결재자 (10-15 · IT Ticket · ACC Voucher 「Adding an Additional Approver」 와 같은 방식) ══
@@ -2587,7 +2601,12 @@ function validate(cat) {
 }
 /* 결재선 — 금액(KRW 환산) → approvalRule 로 단계를 고르고, 단계마다 결재자를 정한다. 같은 사람이 이어지는 단계면 두 번 결재(09-19 원칙). */
 function buildApprovers(cat) {
-  const m = moneyState(cat), steps = stepsFor(cat, m.krw);
+  const m = moneyState(cat);
+  // 최소 금액 미만 · 금액 없음은 결재선을 만들지 않는다(저장 경로 방어 — 결재행이 생기지 않게)
+  if (!(m.krw > 0)) throw new Error('금액(KRW 환산)이 없어 결재선을 정할 수 없습니다.');
+  if (belowMin(cat, m.krw)) throw new Error(belowMinMsg(cat) + '\n상신할 수 없습니다.');
+  const steps = stepsFor(cat, m.krw);
+  if (!steps.length) throw new Error('이 금액에 맞는 결재선이 없어 상신할 수 없습니다.');
   applyFlexApprovers();
   const out = [], bad = [], cfgMiss = [];
   steps.forEach((st, i) => {
@@ -2614,6 +2633,8 @@ function buildApprovers(cat) {
 }
 async function submitForm(cat) {
   if (_submitting) return;
+  // 작성 대상 최소 금액 미만 — 버튼을 막아 두지만 Enter · 개발자 도구로 눌러도 여기서 한 번 더 막는다(10-16)
+  if (belowMin(cat, moneyState(cat).krw)) { alert(belowMinMsg(cat) + '\n상신할 수 없습니다.'); syncSubmit(cat); return; }
   const miss = validate(cat);
   if (miss.length) { alert('다음 항목을 확인해 주세요.\n\n· ' + miss.join('\n· ')); return; }
   let approvers;
@@ -2682,6 +2703,7 @@ async function submitForm(cat) {
   } finally {
     _submitting = false;
     document.getElementById(cat + '-submit').disabled = false;
+    syncSubmit(cat);
     loading(false);
   }
 }
