@@ -553,7 +553,7 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .req-att{color:#a4262c;font-weight:700}
 .half-row > .fld{margin-bottom:13px}
 .half-row > .fld label{white-space:normal}
-/* 추천 공급업체 — 칸 안 오른쪽 검색 아이콘(콤보박스 모양) + BP-Master 「BP 검색」 과 같은 창. 은행 · 계좌는 표시 안 함 */
+/* 추천 공급업체 — BP-Master 「BP 검색」 과 같은 창 · 같은 결과 카드(코드 · 유형 · 비활성 배지 / 이름 / 한글이름 / 사업자등록번호 / Bank Info. | Account No.) — 10-16 */
 /* 공급업체 라벨 줄 — 라벨 바로 오른쪽에 「BP Master 검색」 알약(10-15). 좁으면 라벨 아래로 내려간다 */
 .lbl-row{display:flex;flex-wrap:wrap;align-items:center;column-gap:10px;row-gap:5px;margin-bottom:6px}
 .lbl-row > label{margin-bottom:0}
@@ -582,7 +582,8 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .bp-it:hover,.bp-it:focus{background:#f0f6ff;border-color:#0078d4}
 .bp-it .c{font-size:11px;color:#a19f9d}
 .bp-it .n{font-size:13px;font-weight:600;color:#323130;overflow-wrap:anywhere}
-.bp-it .s{font-size:11px;color:#605e5c}
+.bp-it .s{font-size:11px;color:#605e5c;overflow-wrap:anywhere}
+.bp-it .s .ac{white-space:nowrap}   /* 좁은 화면에서 계좌번호가 중간에서 끊기지 않게 「Account No.: …」 를 한 덩어리로 */
 .bp-inact{background:#fde7e9;color:#a4262c;border-radius:8px;padding:0 6px;font-size:10px;font-weight:700}
 .bp-more{font-size:11px;color:#a19f9d;padding:4px 12px;border-bottom:1px solid #edebe9;margin-bottom:5px}
 .bp-empty{text-align:center;padding:20px;color:#a19f9d;font-size:.8rem}
@@ -1016,13 +1017,13 @@ window.apsYear = (function () {
 
 <div id="loading" role="status" aria-live="polite"><div class="lbox"><div class="spin"></div><div class="lt" id="loading-msg">처리 중입니다</div><div class="ls" id="loading-sub"></div></div></div>
 
-<!-- 추천 공급업체 — BP 검색(BP-Master 의 BP 검색 모달과 같은 구성 · Employee · 은행/계좌 제외) -->
+<!-- 추천 공급업체 — BP 검색(BP-Master 의 BP 검색 모달과 같은 구성 · 같은 결과 카드 · Employee 제외) -->
 <div class="ov" id="bp-ov" onclick="if(event.target===this)closeBpPicker()">
   <div class="bpm" role="dialog" aria-label="BP 검색">
     <div class="bpm-hd"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>BP 검색 (Vendor / Customer)</span><button type="button" onclick="closeBpPicker()" aria-label="닫기">✕</button></div>
     <div class="bpm-bd">
       <div class="bpm-sb">
-        <input type="text" id="bp-q" placeholder="BP코드, 이름, 한글이름, 사업자등록번호 검색..." maxlength="60" oninput="bpSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();bpSearch(this.value,true)}" autocomplete="off">
+        <input type="text" id="bp-q" placeholder="BP코드, 이름, 사업자등록번호, Bank Info., Account No. 검색..." maxlength="60" oninput="bpSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();bpSearch(this.value,true)}" autocomplete="off">
         <button type="button" onclick="bpSearch(document.getElementById('bp-q').value,true)">검색</button>
       </div>
       <div id="bp-res"></div>
@@ -1688,8 +1689,12 @@ function rateFor(cur) {
 }
 /* ── 추천 공급업체 — BP Master 검색(ACC Voucher 「BP 검색」 과 같은 파일 · 같은 검색) ──────────────────
    파일: STK-DB 문서 루트의 BP-Master_목록_20260930_1756.xlsx(없으면 루트의 BP-Master_목록*.xlsx 중 이름이 가장 큰 것) — ACC Others BP Master 가 관리하고
-   ACC Voucher · BP Master 가 읽는 파일. 열: A Code · B 유형 · C Name 1 · D 한글이름 · E 사업자등록번호 · (F Bank · G Account no. — 읽지 않음) · H 상태.
-   · 공급업체 추천이라 Vendor · Customer 만 싣고 Employee(개인 BP)는 뺀다. 은행 · 계좌는 메모리에도 올리지 않는다(ACC Voucher 10-10 마스킹 원칙보다 한 단계 더).
+   ACC Voucher · BP Master 가 읽는 파일. 열: A Code · B 유형 · C Name 1 · D 한글이름 · E 사업자등록번호 · F Bank · G Account no. · H 상태.
+   · 읽기 · 비활성 판정 · 결과 카드 · 검색 대상은 BP-Master(bp-master-data) 「BP 검색」 과 같다(10-16): 비활성 = H열을 다듬은 값이 「비활성」 인 행.
+     카드: 「코드 · 유형 [비활성]」 / 이름 / D열(한글이름 — 실제 파일에선 「Local Vendor」 같은 구분이 적힌 행도 있다) / 사업자등록번호 / Bank Info. | Account No.
+     빈 칸은 「Master data 미기재」. 빈 검색어면 파일 순서 앞 10건, 검색은 최대 50건(파일 순서 그대로 — 비활성도 같은 자리).
+   · 공급업체 추천이라 Vendor · Customer 만 싣고 Employee(개인 BP)는 뺀다. 은행 · 계좌는 창에 보여 주기만 하고 저장하지 않는다(칸에는 「NAME / CODE」 만).
+   · 비활성 BP 도 고를 수 있다(BP-Master 도 막지 않음) — 고를 때 한 번 확인하고, 칸 아래 표시에 빨간 「비활성」.
    · 고르면 칸에 「NAME / CODE」(양식 예: DAIMLER TRUCK SOUTHERN AFRICA LTD. / KR850089). 저장은 RecommendedSupplier 글자 하나(새 열 없음).
    · 목록에 없는 업체(신규 등)는 직접 입력 — 칸 아래에 작게 「직접 입력」. 파일을 못 읽으면 검색 단추를 끄고 직접 입력 안내만(상신은 막지 않음). */
 const BP_FILE_NAME = 'BP-Master_목록_20260930_1756.xlsx';
@@ -1719,7 +1724,8 @@ async function loadBpMaster() {
       const r = rows[i] || [];
       const code = String(r[0] || '').trim(), type = String(r[1] || '').trim(), n1 = String(r[2] || '').trim(), n2 = String(r[3] || '').trim();
       if (!code || !(n1 || n2) || /^(bp )?code$/i.test(code) || /^employee$/i.test(type)) continue;
-      list.push({ code, type, name: n1 || n2, nameKo: n1 ? n2 : '', bizNo: String(r[4] || '').trim(), inactive: /^(비활성|x|yes|y)$/i.test(String(r[7] || '').trim()) });
+      list.push({ code, type, name: n1 || n2, nameKo: n1 ? n2 : '', bizNo: String(r[4] || '').trim(), bank: String(r[5] || '').trim(), accountNo: String(r[6] || '').trim(),
+        inactive: /^비활성$/.test(String(r[7] || '').trim()) });   // BP-Master loadBpModalData 와 같은 판정
     }
     if (!list.length) throw new Error('BP 목록이 비어 있음');
     BPM = { loaded: true, failed: false, list };
@@ -1755,15 +1761,17 @@ function bpSearch(q, now) {
   const run = () => {
     const el = document.getElementById('bp-res');
     if (!BPM.loaded) { el.innerHTML = '<div class="bp-empty">데이터 로딩 중...</div>'; return; }
-    const kw = String(q || '').trim().toLowerCase(), kd = kw.replace(/[^0-9a-z]/g, '');
+    // BP-Master 와 같은 대상(코드 · 이름 · 한글이름 · 사업자등록번호 · Bank · Account No.) + 숫자만 적은 사업자번호 · 계좌도 찾는다(하이픈 무시)
+    const kw = String(q || '').trim().toLowerCase(), kd = /^[0-9\s-]+$/.test(kw) ? kw.replace(/\D/g, '') : '';
+    const dg = v => String(v || '').replace(/\D/g, '');
     let out = [];
-    if (!kw) out = BPM.list.filter(b => !b.inactive).slice(0, 10);
+    if (!kw) out = BPM.list.slice(0, 10);
     else {
       for (const b of BPM.list) {
         if (b.code.toLowerCase().includes(kw) || b.name.toLowerCase().includes(kw) || (b.nameKo && b.nameKo.toLowerCase().includes(kw)) ||
-            (kd.length >= 3 && b.bizNo && b.bizNo.replace(/[^0-9a-z]/gi, '').toLowerCase().includes(kd))) { out.push(b); if (out.length >= 50) break; }
+            (b.bizNo && b.bizNo.toLowerCase().includes(kw)) || (b.bank && b.bank.toLowerCase().includes(kw)) || (b.accountNo && b.accountNo.toLowerCase().includes(kw)) ||
+            (kd.length >= 3 && (dg(b.bizNo).includes(kd) || dg(b.accountNo).includes(kd)))) { out.push(b); if (out.length >= 50) break; }
       }
-      out.sort((a, b) => (a.inactive - b.inactive));
     }
     if (!out.length) { el.innerHTML = '<div class="bp-empty">검색 결과 없음 — 목록에 없는 업체는 창을 닫고 직접 입력하세요.</div>'; return; }
     el.innerHTML = (out.length >= 50 ? '<div class="bp-more">상위 50개 표시</div>' : '') + out.map(b =>
@@ -1771,13 +1779,16 @@ function bpSearch(q, now) {
         '<div class="c">' + esc(b.code) + ' · ' + esc(b.type || '-') + (b.inactive ? ' <span class="bp-inact">비활성</span>' : '') + '</div>' +
         '<div class="n">' + esc(b.name) + '</div>' +
         (b.nameKo ? '<div class="s">' + esc(b.nameKo) + '</div>' : '') +
-        '<div class="s">사업자등록번호: ' + esc(b.bizNo || 'Master data 미기재') + '</div></div>').join('');
+        '<div class="s">사업자등록번호: ' + esc(b.bizNo || 'Master data 미기재') + '</div>' +
+        '<div class="s">Bank Info.: ' + esc(b.bank || 'Master data 미기재') + ' &nbsp;|&nbsp; <span class="ac">Account No.: ' + esc(b.accountNo || 'Master data 미기재') + '</span></div></div>').join('');
   };
   if (now) run(); else _bpTimer = setTimeout(run, 200);
 }
 function selectBp(code) {
   const b = BPM.list.find(x => x.code === code), cat = _bpFor;
   if (!b || !cat) return;
+  // 비활성 BP — 막지는 않는다(BP-Master 도 고를 수 있음). 한 번 확인하고, 취소하면 창을 그대로 둔다.
+  if (b.inactive && !confirm('비활성 BP 입니다 (' + b.code + ', ' + b.name + '). 그래도 추천 공급업체로 지정할까요?')) return;
   const text = b.name + ' / ' + b.code;
   document.getElementById(cat + '-f-supplier').value = text;
   _sup[cat] = { code: b.code, name: b.name, type: b.type, inactive: b.inactive, text };
