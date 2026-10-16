@@ -648,6 +648,8 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .bpm-pill:hover{background:#e1effb;border-color:#8cbde8;color:#005a9e}
 .bpm-pill:active{background:#d3e7f8}
 .bpm-pill:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(0,120,212,.28);border-color:#0078d4}
+/* 금액 라벨 옆 「Excl. VAT」 — VAT 제외 금액임을 알리는 작은 회색 태그(10-16) */
+.vat-tag{display:inline-block;margin-left:4px;padding:0 6px;height:16px;line-height:16px;border-radius:4px;background:#f3f2f1;border:1px solid #e1dfdd;color:#605e5c;font-size:10.5px;font-weight:600;letter-spacing:.1px;vertical-align:1px;white-space:nowrap}
 .bpm-pill:disabled{background:#f3f2f1;border-color:#e1dfdd;color:#a19f9d;cursor:not-allowed}
 .sup-src{font-size:.7rem;color:#8a8886;margin-top:4px;min-height:1em;line-height:1.5}
 .sup-src .k{color:#0b5fa5;background:#e1f0ff;border-radius:9px;padding:0 7px;font-weight:600;font-size:10px;margin-right:2px}
@@ -1952,7 +1954,7 @@ function fieldHtml(cat, fd) {
   if (fd.type === 'money') {
     return '<div class="fld full">' + fieldLabel(Object.assign(fd, { _id: cat + '-amt' })) +
       '<div class="money-grid">' +
-        '<div class="fld"><label style="font-weight:400;color:#605e5c">금액 (Amount)</label><input type="text" id="' + cat + '-amt" inputmode="decimal" maxlength="20" placeholder="0" onkeydown="numKeyDown(event)" oninput="fmtAmtInput(this, val(\'' + cat + '-cur\')===\'KRW\'); onMoneyChange(\'' + cat + '\')" onblur="numBlur(this, val(\'' + cat + '-cur\')===\'KRW\', \'' + cat + '\')"></div>' +
+        '<div class="fld"><label style="font-weight:400;color:#605e5c">금액 (Amount) <span class="vat-tag" title="부가세(VAT)를 뺀 금액으로 입력합니다">Excl. VAT</span></label><input type="text" id="' + cat + '-amt" inputmode="decimal" maxlength="20" placeholder="0" onkeydown="numKeyDown(event)" oninput="fmtAmtInput(this, val(\'' + cat + '-cur\')===\'KRW\'); onMoneyChange(\'' + cat + '\')" onblur="numBlur(this, val(\'' + cat + '-cur\')===\'KRW\', \'' + cat + '\')"></div>' +
         '<div class="fld"><label style="font-weight:400;color:#605e5c">통화</label><select id="' + cat + '-cur" onchange="onMoneyChange(\'' + cat + '\',\'cur\')"><option value="KRW">KRW</option></select></div>' +
         '<div class="fld"><label style="font-weight:400;color:#605e5c">환율 (1 단위 = KRW)</label><input type="text" id="' + cat + '-rate" inputmode="decimal" maxlength="16" placeholder="-" oninput="fmtRateInput(this); onMoneyChange(\'' + cat + '\',\'rate\')" onblur="numBlur(this, false, \'' + cat + '\', \'rate\')"></div>' +
         '<div class="fld"><label style="font-weight:400;color:#605e5c">KRW 환산 (결재 기준)</label><input type="text" id="' + cat + '-krw" readonly tabindex="-1" placeholder="0"></div>' +
