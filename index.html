@@ -225,6 +225,18 @@ table.lst td.c-no{color:#a19f9d;font-size:.74rem}
 .lim-was s{color:#a19f9d}
 .lim-err{font-size:.68rem;color:#a4262c;margin-top:2px;line-height:1.45}
 .lim-line{font-size:.76rem;line-height:1.45}
+.lim-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:3px}
+.lim-chip{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 9px;border:1px solid #c8c6c4;border-radius:11px;background:#fff;color:#8a8886;font-size:.68rem;font-weight:600;font-family:inherit;cursor:pointer;line-height:1}
+.lim-chip .n:empty{display:none}
+.lim-chip .n{display:inline-flex;align-items:center;justify-content:center;min-width:14px;height:14px;border-radius:7px;background:rgba(255,255,255,.25);font-size:.6rem}
+.lim-chip:hover{border-color:#0078d4;color:#0078d4}
+.lim-chip.on{background:#0078d4;border-color:#0078d4;color:#fff}
+.lim-chip.on:hover{background:#005a9e;color:#fff}
+.lim-chip:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(0,120,212,.35)}
+.lim-chip:disabled{cursor:not-allowed;opacity:.6}
+.lim-lp{color:#323130;font-size:.74rem}
+.lim-was-i{font-size:.66rem;color:#8a8886;white-space:nowrap}
+.lim-was-i s{color:#a19f9d}
 .lim-tbl .none{display:inline-block;background:#f3f2f1;color:#605e5c;border-radius:10px;padding:0 8px;font-size:.68rem;font-weight:600}
 .lim-muted{color:#a19f9d;font-size:.72rem}
 .lim-actions{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
@@ -262,6 +274,7 @@ table.lst td.c-no{color:#a19f9d;font-size:.74rem}
   .lim-tbl tbody tr:last-child{border-bottom:none}
   .lim-tbl td{border-bottom:none;padding:2px 4px}
   .lim-tbl td.lim-line{color:#605e5c;font-size:.74rem;padding-top:3px}
+  .lim-chip{height:30px;padding:0 12px;font-size:.74rem}
   .lim-cell input[type=text]{flex:1 1 auto;min-width:0;width:auto;height:38px;font-size:.88rem}
   .lim-lt{width:auto;text-align:left;padding-right:0}
   .lim-actions .lim-btn{flex:1 1 0;min-height:44px}
@@ -1233,9 +1246,22 @@ const PROC_TYPES = {
       { k: 'MAX', label: '공식 PDF 결재표 RD 줄 상한' },
     ],
     tierOf(krw, L) { return krw >= L.L3 ? 3 : krw >= L.L4 ? 2 : krw >= L.L5 ? 1 : 0; },
+    /* 구간별 결재 라인(v13 · 관리자 탭에서 바꿈) — 구간 시작 키(L5 · L4 · L3) → steps key 목록(늘 위 steps 의 차례 = 직급 순).
+       L.lines 가 없거나 잘못된 구간은 기본값. 사람을 찾는 방법(조직도 · 설정 키)은 steps 그대로이고 새 출처는 없다. */
+    bandKeys: ['L5', 'L4', 'L3'],
+    lineDefaults: { L5: ['TL'], L4: ['TL', 'MC', 'CFO'], L3: ['TL', 'MC', 'CFO', 'RD'] },
+    normLine(arr) {
+      const keys = this.steps.map(s => s.key), set = new Set((Array.isArray(arr) ? arr : []).map(String));
+      return keys.filter(k => set.has(k));   // 모르는 키는 버리고 직급 순으로
+    },
+    linesOf(L) {
+      const raw = (L && L.lines) || {}, out = {};
+      this.bandKeys.forEach(b => { const n = this.normLine(raw[b]); out[b] = n.length ? n : this.lineDefaults[b].slice(); });
+      return out;
+    },
     approvalRule(krw, L) {
       const t = this.tierOf(krw, L);
-      return t >= 3 ? ['TL', 'MC', 'CFO', 'RD'] : t === 2 ? ['TL', 'MC', 'CFO'] : t === 1 ? ['TL'] : [];
+      return t ? this.linesOf(L)[this.bandKeys[t - 1]].slice() : [];
     },
     // 작성 대상 최소 금액(KRW) — 이 금액 미만은 결재선이 없고(approvalRule → []) 상신할 수 없다
     minOf(L) { return L.L5; },
@@ -1244,11 +1270,14 @@ const PROC_TYPES = {
       return ['< ' + w(L.L5) + ' KRW', '≥ ' + w(L.L5) + ' & < ' + w(L.L4) + ' KRW', '≥ ' + w(L.L4) + ' & < ' + w(L.L3) + ' KRW',
               '≥ ' + w(L.L3) + ' KRW'][t];
     },
-    // 공식 PDF 결재표의 「Approval Limit」 칸 — 단계마다 해당 구간
+    /* 공식 PDF 결재표의 「Approval Limit」 칸 — 원본 양식처럼 「그 결재자가 처음 들어가는 구간」(v13: 그 신청의 결재 라인 기준으로 구한다).
+       기본 라인이면 예전과 같다(TL: L5~L4 · MC · CFO: L4~L3 · RD: L3~MAX). 어느 구간에도 없는 역할은 null(결재표에 줄을 두지 않는다). */
     limitCell(stepKey, L) {
-      const w = n => Number(n).toLocaleString('en-US');
-      const r = stepKey === 'TL' ? [L.L5, L.L4] : (stepKey === 'MC' || stepKey === 'CFO') ? [L.L4, L.L3] : [L.L3, L.MAX];
-      return '≥ ' + w(r[0]) + ' KRW &amp;<br>&lt; ' + w(r[1]) + ' KRW';
+      const w = n => Number(n).toLocaleString('en-US'), lines = this.linesOf(L), b = this.bandKeys;
+      const i = b.findIndex(k => lines[k].includes(stepKey));
+      if (i < 0) return null;
+      const lo = L[b[i]], hi = i + 1 < b.length ? L[b[i + 1]] : L.MAX;
+      return '≥ ' + w(lo) + ' KRW &amp;<br>&lt; ' + w(hi) + ' KRW';
     },
     listCols: [
       { label: '공급업체', w: '190px', cell: f => '<span title="' + esc(f.RecommendedSupplier || '') + '">' + esc(f.RecommendedSupplier || '-') + '</span>' },
@@ -2415,9 +2444,15 @@ function limitsFromCfg(cfg, cat, psData) {
     if (Number.isFinite(a) && a > 0) { L[k] = a; src[k] = 'app'; return; }
     const n = cfgNum(cfg, key); src[k] = n != null ? 'cfg' : 'def'; if (n != null) L[k] = n;
   });
+  // 구간별 결재 라인(v13) — 관리자 설정에만 있다(설정 파일 키 없음). 빈 · 잘못된 구간은 linesOf 가 기본값으로
+  if (T.lineDefaults) {
+    const rl = app.lines && typeof app.lines === 'object' ? app.lines : null;
+    L.lines = T.linesOf({ lines: rl || {} });
+    src.lines = rl ? 'app' : 'def';
+  }
   if (!(L.L5 < L.L4 && L.L4 < L.L3)) {
-    Object.keys(src).forEach(k => { src[k] = 'def'; });
-    return { L: Object.assign({}, T.limitDefaults), src, bad: true, raw: L };
+    Object.keys(src).forEach(k => { if (k !== 'lines') src[k] = 'def'; });
+    return { L: Object.assign({}, T.limitDefaults, L.lines ? { lines: L.lines } : {}), src, bad: true, raw: L };
   }
   return { L, src, bad: false };
 }
@@ -3584,8 +3619,11 @@ function sslPdfPages(f, rows, L) {
       '<td class="sig">' + (a ? sslStampHtml(a) : '') + '</td><td class="dt">' + (ok && a.ApprovalDate ? esc(dotDate(fmtDate(a.ApprovalDate))) : '') + '</td></tr>';
   };
   const exRows = extras.map(a => tr('Additional approval<br>(Step ' + esc(String(a.ApprovalOrder || '')) + ')', esc(EXTRA_ROLE), a, 'ex'));
-  const body = '<table class="at">' + col + '<tbody>' + T.steps.map((st, i) =>
-    tr(T.limitCell(st.key, L), esc(st.role), byKey[st.key]) + (i === 0 ? exRows.join('') : '')
+  // v13: 그 신청의 결재 라인 어느 구간에도 없는 역할은 줄을 두지 않는다. 추가 결재자는 결재표 첫 줄 바로 아래(결재선 1차 다음과 같은 자리)
+  const shown = T.steps.map(st => ({ st, lim: T.limitCell(st.key, L) })).filter(x => x.lim || byKey[x.st.key]);
+  const firstKey = (T.steps.filter(st => byKey[st.key]).sort((x, y) => (Number(byKey[x.key].ApprovalOrder) || 0) - (Number(byKey[y.key].ApprovalOrder) || 0))[0] || (shown[0] || {}).st || {}).key;
+  const body = '<table class="at">' + col + '<tbody>' + shown.map(x =>
+    tr(x.lim || '', esc(x.st.role), byKey[x.st.key]) + (x.st.key === firstKey ? exRows.join('') : '')
   ).join('') + '<tr class="endbar"><td colspan="6"></td></tr></tbody></table>';
   const fn = '<div class="fn"><div class="rule"></div><sup>1</sup> If a Blanket Order is created by NPM Procurement DTAG with a specific supplier, the single source letter should be used.<br>&nbsp;&nbsp;It is the responsibility of the originator of the requisition to meet the effective regulations.</div>';
   const ft = '<div class="ft">NPM Procurement: Single Source Letter of Justification<span class="r">Valid as of:</span><br>04/2022</div>';
@@ -3790,12 +3828,18 @@ async function exportExcel() {
 const PROC_SETTINGS_FILE = 'Procurement.json';
 let _procSettings = null;   // { exists, eTag, id, data } · 읽기 실패면 { exists:false, error }
 let _limSaving = false;
+let _limLines = null;   // 카드에서 고르는 중인 구간별 결재 라인 { L5:[…], L4:[…], L3:[…] }(v13)
 function canEditLimits() { return isAdmin() || isIT(); }   // 둘 다 설정을 다 읽었을 때만 참(fail-closed)
 function fmtWon(n) { return Number(n).toLocaleString('en-US'); }
 function limLabelOf(T, k) { const d = (T.limitEdit || []).concat(T.limitReadOnly || []).find(e => e.k === k); return d ? d.label : k; }
 function limPick(T, L, keys) { const o = {}; (keys || Object.keys(T.limitKeys || {})).forEach(k => { o[k] = Number(L[k]); }); return o; }
 const LIM_SRC_LABEL = { app: '관리자 설정', cfg: '설정 파일', def: '기본값' };
-function limitsSnap(cat, L) { const T = PROC_TYPES[cat]; return { kind: 'limits', at: new Date().toISOString(), text: 'Approval limits (KRW) used at submission', limits: limPick(T, L) }; }
+// 결재 라인 짧은 표기(TL→MC→CFO) · 역할 표기(Team Leader (L5) → …) · 구간 이름(26,000,000 이상)
+function lineCodes(arr) { return (arr || []).join('→'); }
+function lineRoles(T, arr) { return (arr || []).map(k => (T.steps.find(x => x.key === k) || { role: k }).role).join(' → '); }
+function bandLabel(L, b) { return '결재 라인(' + fmtWon(L[b]) + ' 이상)'; }
+function limitsSnap(cat, L) { const T = PROC_TYPES[cat], o = limPick(T, L); if (T.linesOf) o.lines = T.linesOf(L);   // v13: 그 신청이 쓴 구간별 결재 라인도 남긴다
+  return { kind: 'limits', at: new Date().toISOString(), text: 'Approval limits (KRW) and approval lines used at submission', limits: o }; }
 function limitsSnapOf(f) {
   let logs = []; try { logs = JSON.parse(f.AdminComments || '[]'); } catch (e) { return null; }
   const s = (Array.isArray(logs) ? logs : []).find(x => x && x.kind === 'limits' && x.limits);
@@ -3820,13 +3864,15 @@ async function readProcSettings() {
 function procHistory(ps) { const h = ps && ps.data && ps.data.history; return Array.isArray(h) ? h : []; }
 /* 이 신청의 결재 기준 — ① 상신 때 남긴 값 ② (그 기능 전 신청) Procurement.json history 에서 신청일에 쓰이던 값(LTR-PC 의 당시 기준 단가와 같은 방식) ③ 지금 값 */
 async function docLimits(cat, f) {
-  const cur = limitsOf(cat), snap = limitsSnapOf(f);
-  if (snap) return Object.assign({}, cur, snap);
+  const T = PROC_TYPES[cat], cur = limitsOf(cat), snap = limitsSnapOf(f);
+  // 결재 라인이 없는 기록(v13 이전)은 그때의 기본 라인 — 지금 관리자 설정 라인이 섞이지 않게
+  const base = Object.assign({}, cur, T.lineDefaults ? { lines: T.linesOf({}) } : {});
+  if (snap) return Object.assign(base, snap);
   try {
     const t = Date.parse(f.RequestDate || '');
     const ps = await readProcSettings().catch(() => _procSettings);
     const hist = procHistory(ps).filter(h => h && h.cat === cat && h.before && h.after && !isNaN(Date.parse(h.at))).sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
-    if (hist.length && !isNaN(t)) { let L = hist[0].before; hist.forEach(h => { if (Date.parse(h.at) <= t) L = h.after; }); return Object.assign({}, cur, L); }
+    if (hist.length && !isNaN(t)) { let L = hist[0].before; hist.forEach(h => { if (Date.parse(h.at) <= t) L = h.after; }); return Object.assign(base, L); }
   } catch (e) { console.warn('[Limits] 변경 이력 확인 실패 — 지금 기준으로 그림:', e && e.message); }
   return cur;
 }
@@ -3849,6 +3895,7 @@ async function syncLimitsFromServer() {
   CATS.forEach(c => {
     const T = PROC_TYPES[c], nx = limitsFromCfg(base, c, ps.data).L, cur = limitsOf(c);
     Object.keys(T.limitKeys || {}).forEach(k => { if (Number(nx[k]) !== Number(cur[k])) lines.push('· ' + limLabelOf(T, k) + ': ' + fmtWon(cur[k]) + ' → ' + fmtWon(nx[k]) + ' KRW'); });
+    if (T.linesOf) { const a = T.linesOf(cur), z = T.linesOf(nx); T.bandKeys.forEach(b => { if (lineCodes(a[b]) !== lineCodes(z[b])) lines.push('· ' + bandLabel(nx, b) + ': ' + lineCodes(a[b]) + ' → ' + lineCodes(z[b])); }); }
   });
   const wasErr = !!(_procSettings && _procSettings.error);
   _procSettings = ps;
@@ -3868,12 +3915,13 @@ function renderLimitCard(force) {
   if (!force && card.dataset.cat === cat && card.innerHTML) return;
   card.dataset.cat = cat;
   const L = limitsOf(cat), info = PROC_LIMIT_SRC[cat] || { src: {}, bad: false }, psErr = _procSettings && _procSettings.error;
+  _limLines = T.linesOf ? T.linesOf(L) : null;   // 구간별 결재 라인 고치는 중인 값(v13)
   const src = k => { const s = info.src[k] || 'def'; return '<span class="lim-src" data-src="' + s + '" title="값 출처: ' + LIM_SRC_LABEL[s] +
     (s === 'app' ? ' (관리자 탭에서 저장한 값)' : s === 'cfg' ? ' (설정 파일 키 ' + T.limitKeys[k] + ' — 읽기만)' : '') + '">' + LIM_SRC_LABEL[s] + '</span>'; };
   const histOpen = !!(document.getElementById('lim-hist') || {}).open;
   card.innerHTML =
     '<div class="lim-hd"><span class="lim-title">⚙️ 결재 기준 금액 · ' + esc(T.prefix) + '</span>' +
-      '<span class="lim-sub">새로 상신하는 신청부터 적용 · 추가 결재자(최대 3명)는 Team Leader 다음</span></div>' +
+      '<span class="lim-sub">새로 상신하는 신청부터 적용 · 추가 결재자(최대 3명)는 1차 결재자 다음</span></div>' +
     (psErr ? '<div class="lim-warn">⚠ 관리자 설정을 읽지 못해 저장할 수 없습니다 — 새로고침 후 다시 시도해 주세요. <span class="lim-warn-d">' + esc(psErr) + '</span></div>' : '') +
     (info.bad ? '<div class="lim-warn">⚠ 설정 값이 오름차순이 아니어서 기본값을 쓰고 있습니다' +
       (info.raw ? ' (' + esc(T.limitEdit.map(e => e.k + ' ' + fmtWon(info.raw[e.k])).join(' · ')) + ')' : '') + '. 올바른 값으로 저장하면 바로잡힙니다.</div>' : '') +
@@ -3886,7 +3934,10 @@ function renderLimitCard(force) {
           ' aria-describedby="lim-err-' + e.k + '" oninput="limOnInput()" onblur="limOnBlur(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();openLimitConfirm();}">' +
           '<span class="lim-up">이상</span>' + src(e.k) + '</div>' +
           '<div class="lim-was" id="lim-was-' + e.k + '"></div><div class="lim-err" id="lim-err-' + e.k + '" role="alert" style="display:none"></div></td>' +
-        '<td class="lim-line" id="lim-line-' + e.k + '"></td></tr>').join('') +
+        '<td class="lim-line">' + (_limLines ? '<div class="lim-chips" role="group" aria-label="' + esc(e.label) + ' 구간 결재 라인 — 누르면 넣고 뺍니다"' + (info.src.lines === 'app' ? '' : ' title="기본 결재 라인"') + '>' +
+          T.steps.map(st => '<button type="button" class="lim-chip" id="lim-chip-' + e.k + '-' + st.key + '" data-b="' + e.k + '" data-r="' + st.key + '" aria-pressed="false" title="' + esc(st.role) + '" onclick="limToggle(\'' + e.k + '\',\'' + st.key + '\')"><span class="n"></span>' + esc(st.key) + '</button>').join('') +
+          '</div>' : '') + '<div class="lim-lp" id="lim-line-' + e.k + '"></div>' +
+          (_limLines ? '<div class="lim-err" id="lim-lerr-' + e.k + '" role="alert" style="display:none"></div>' : '') + '</td></tr>').join('') +
     '</tbody></table>' +
     '<div class="lim-actions"><span class="lim-msg" id="lim-msg" aria-live="polite"></span>' +
       '<button type="button" class="lim-btn" id="lim-reset" onclick="limResetInputs()">되돌리기</button>' +
@@ -3919,9 +3970,29 @@ function limState() {
   }
   const top = ed[ed.length - 1], max = Number(cur.MAX);
   if (top && v[top] != null && max > 0 && !(v[top] < max) && !out.errs[top]) out.errs[top] = limLabelOf(T, 'MAX') + '(' + fmtWon(max) + ' KRW)보다 작아야 합니다.';
-  out.ok = !Object.keys(out.errs).length;
+  // 구간별 결재 라인(v13) — 구간마다 1명 이상
+  out.lines = null; out.lerrs = {}; out.lchanged = [];
+  if (T.linesOf && _limLines) {
+    const now = T.linesOf(cur);
+    out.lines = {};
+    T.bandKeys.forEach(b => {
+      const n = T.normLine(_limLines[b]); out.lines[b] = n;
+      if (!n.length) out.lerrs[b] = '결재자를 1명 이상 고르세요.';
+      else if (lineCodes(n) !== lineCodes(now[b])) out.lchanged.push(b);
+    });
+    if (out.lchanged.length) out.dirty = true;
+  }
+  out.ok = !Object.keys(out.errs).length && !Object.keys(out.lerrs).length;
   out.changed = ed.filter(k => v[k] != null && Number(v[k]) !== Number(cur[k]));
+  out.n = out.changed.length + out.lchanged.length;
   return out;
+}
+function limToggle(b, r) {
+  const T = PROC_TYPES[_currentCat];
+  if (!_limLines || !T.normLine || _limSaving) return;
+  const cur = _limLines[b] || [];
+  _limLines[b] = T.normLine(cur.includes(r) ? cur.filter(x => x !== r) : cur.concat([r]));
+  limOnInput();
 }
 function limOnBlur(el) {
   const raw = String(el.value || '').trim();
@@ -3932,33 +4003,42 @@ function limOnInput() {
   const cat = _currentCat, T = PROC_TYPES[cat];
   if (!T || !T.limitEdit || !document.getElementById('lim-prev-body')) return;
   const st = limState(), cur = limitsOf(cat), psErr = !!(_procSettings && _procSettings.error);
-  const L2 = st.ok ? Object.assign({}, cur, st.vals) : cur;
+  const L2 = Object.assign({}, st.ok ? Object.assign({}, cur, st.vals) : cur, st.lines ? { lines: st.lines } : {});
   T.limitEdit.forEach(e => {
     const el = document.getElementById('lim-in-' + e.k), er = document.getElementById('lim-err-' + e.k), was = document.getElementById('lim-was-' + e.k);
-    const bad = !!st.errs[e.k], chg = !bad && st.changed.includes(e.k);
+    const bad = !!st.errs[e.k], chg = !bad && st.changed.includes(e.k), lchg = st.lchanged.includes(e.k);
     el.classList.toggle('bad', bad); el.classList.toggle('chg', chg); el.setAttribute('aria-invalid', bad ? 'true' : 'false');
-    document.getElementById('lim-tr-' + e.k).classList.toggle('chg', chg);
+    document.getElementById('lim-tr-' + e.k).classList.toggle('chg', chg || lchg);
     er.textContent = st.errs[e.k] || ''; er.style.display = bad ? '' : 'none';
     was.innerHTML = chg ? '현재 <s>' + fmtWon(cur[e.k]) + '</s>' : '';
-    // 이 구간의 결재 라인 — 구간 시작 금액에서 approvalRule
-    const keys = T.approvalRule(Number(L2[e.k]), L2);
-    document.getElementById('lim-line-' + e.k).textContent = keys.map(k => (T.steps.find(x => x.key === k) || { role: k }).role).join(' → ');
+    // 이 구간의 결재 라인 — 고르는 중인 라인(v13 칩) · 없으면 구간 시작 금액에서 approvalRule
+    const keys = st.lines ? st.lines[e.k] : T.approvalRule(Number(L2[e.k]), L2);
+    const lp = document.getElementById('lim-line-' + e.k);
+    lp.textContent = keys.length ? lineRoles(T, keys) : '—';
+    if (st.lines) {
+      T.steps.forEach(x => { const c = document.getElementById('lim-chip-' + e.k + '-' + x.key); if (!c) return; const i = keys.indexOf(x.key);
+        c.setAttribute('aria-pressed', i >= 0 ? 'true' : 'false'); c.classList.toggle('on', i >= 0); c.querySelector('.n').textContent = i >= 0 ? String(i + 1) : ''; c.disabled = _limSaving; });
+      const le = document.getElementById('lim-lerr-' + e.k); le.textContent = st.lerrs[e.k] || ''; le.style.display = st.lerrs[e.k] ? '' : 'none';
+      const was0 = T.linesOf(cur)[e.k];
+      lp.innerHTML = (keys.length ? esc(lineRoles(T, keys)) : '<span class="lim-muted">—</span>') + (lchg ? ' <span class="lim-was-i">현재 <s>' + esc(lineCodes(was0)) + '</s></span>' : '');
+    }
   });
   // 첫 줄 「< 최소 금액」 은 최소 금액 입력을 그대로 따라간다(바르게 입력된 값일 때)
   const k0 = T.limitEdit[0].k, v0 = st.vals[k0];
   document.getElementById('lim-min-mirror').textContent = fmtWon(v0 != null && !st.errs[k0] ? v0 : T.minOf(cur));
   document.querySelector('#lim-prev-body .lim-r0').classList.toggle('chg', v0 != null && !st.errs[k0] && st.changed.includes(k0));
   const save = document.getElementById('lim-save'), reset = document.getElementById('lim-reset'), msg = document.getElementById('lim-msg');
-  save.disabled = !st.ok || !st.changed.length || _limSaving || psErr;
-  save.title = psErr ? '관리자 설정을 읽지 못했습니다' : !st.ok ? '입력값을 고쳐야 저장할 수 있습니다' : !st.changed.length ? '바뀐 값이 없습니다' : '';
+  save.disabled = !st.ok || !st.n || _limSaving || psErr;
+  save.title = psErr ? '관리자 설정을 읽지 못했습니다' : !st.ok ? '입력값을 고쳐야 저장할 수 있습니다' : !st.n ? '바뀐 값이 없습니다' : '';
   reset.disabled = !st.dirty || _limSaving;
   msg.classList.toggle('bad', !st.ok || psErr);
   msg.textContent = psErr ? '관리자 설정을 읽지 못해 저장할 수 없습니다.' : !st.ok ? '입력값을 확인해 주세요.'
-    : st.changed.length ? st.changed.length + '개 변경 — 저장하면 한 번 더 확인합니다.' : '변경 없음';
+    : st.n ? st.n + '개 변경 — 저장하면 한 번 더 확인합니다.' : '변경 없음';
 }
 function limResetInputs() {
   const T = PROC_TYPES[_currentCat], cur = limitsOf(_currentCat);
   (T.limitEdit || []).forEach(e => { const el = document.getElementById('lim-in-' + e.k); if (el) el.value = fmtWon(cur[e.k]); });
+  if (T.linesOf) _limLines = T.linesOf(cur);
   limOnInput();
 }
 function limDenied(where, why) {
@@ -3969,9 +4049,11 @@ function openLimitConfirm() {
   if (!canEditLimits()) { limDenied('확인 창'); return; }
   if (_limSaving || (_procSettings && _procSettings.error)) return;
   const cat = _currentCat, T = PROC_TYPES[cat], st = limState(), cur = limitsOf(cat);
-  if (!st.ok || !st.changed.length) { limOnInput(); return; }
+  if (!st.ok || !st.n) { limOnInput(); return; }
+  const nx = Object.assign({}, cur, st.vals), was = T.linesOf ? T.linesOf(cur) : {};
   document.getElementById('lim-cf-body').innerHTML = '<table class="lim-cf-tbl"><thead><tr><th>항목</th><th style="text-align:right">현재</th><th style="text-align:right">변경</th></tr></thead><tbody>' +
     st.changed.map(k => '<tr><td>' + esc(limLabelOf(T, k)) + '</td><td class="n">' + fmtWon(cur[k]) + '</td><td class="n to">→ ' + fmtWon(st.vals[k]) + '</td></tr>').join('') +
+    st.lchanged.map(b => '<tr class="ln"><td>' + esc(bandLabel(nx, b)) + '</td><td class="n" title="' + esc(lineRoles(T, was[b])) + '">' + esc(lineCodes(was[b])) + '</td><td class="n to" title="' + esc(lineRoles(T, st.lines[b])) + '">→ ' + esc(lineCodes(st.lines[b])) + '</td></tr>').join('') +
     '</tbody></table>';
   document.getElementById('lim-ov').classList.add('on');
   setTimeout(() => { const b = document.getElementById('lim-cf-ok'); if (b) b.focus(); }, 0);
@@ -4011,12 +4093,18 @@ async function saveSslLimits() {
   if (_limSaving || !T || !T.limitEdit) return;
   const st = limState();
   closeLimitConfirm();
-  if (!st.ok || !st.changed.length || (_procSettings && _procSettings.error)) { limOnInput(); return; }
+  if (!st.ok || !st.n || (_procSettings && _procSettings.error)) { limOnInput(); return; }
   _limSaving = true; limOnInput();
   const ed = T.limitEdit.map(e => e.k);
   const before = Object.assign({}, limitsOf(cat)), target = Object.assign({}, before, st.vals);
-  const changes = st.changed.map(k => ({ k, key: T.limitKeys[k], label: limLabelOf(T, k), before: Number(before[k]), after: Number(target[k]) }));
-  const summary = changes.map(c => c.label + ' ' + fmtWon(c.before) + ' → ' + fmtWon(c.after)).join(' / ');
+  const wasL = T.linesOf ? T.linesOf(before) : null;
+  if (st.lines) target.lines = st.lines;
+  // 저장 · 기록에 쓰는 값 — 금액 셋 + (v13) 구간별 결재 라인
+  const pickAll = L => Object.assign(limPick(T, L, ed), T.linesOf ? { lines: T.linesOf(L) } : {});
+  const changes = st.changed.map(k => ({ k, key: T.limitKeys[k], label: limLabelOf(T, k), before: Number(before[k]), after: Number(target[k]) }))
+    .concat(st.lchanged.map(b => ({ k: 'lines.' + b, label: bandLabel(target, b), before: lineCodes(wasL[b]), after: lineCodes(st.lines[b]) })));
+  const fv = v => typeof v === 'number' ? fmtWon(v) : String(v);
+  const summary = changes.map(c => c.label + ' ' + fv(c.before) + ' → ' + fv(c.after)).join(' / ');
   const base = { 항목: T.prefix, 관리자: user.name || '', 저장위치: PROC_SETTINGS_FILE };
   let saved = null, err = null, fresh = null;
   loading(true, '결재 기준 금액 저장 중');
@@ -4028,10 +4116,10 @@ async function saveSslLimits() {
     const d = fresh.data || {}, nowIso = new Date().toISOString();
     const entry = { at: nowIso, atKST: (() => { const k = kstNow(), p = x => String(x).padStart(2, '0'); return k.getUTCFullYear() + '-' + p(k.getUTCMonth() + 1) + '-' + p(k.getUTCDate()) + ' ' + p(k.getUTCHours()) + ':' + p(k.getUTCMinutes()) + ':' + p(k.getUTCSeconds()); })(),
       cat, by: user.email, byName: user.name || '', changes: changes.map(c => ({ k: c.k, label: c.label, before: c.before, after: c.after })),
-      before: limPick(T, before, ed), after: limPick(T, target, ed), summary };
+      before: pickAll(before), after: pickAll(target), summary };
     const obj = Object.assign({}, d, {
       note: 'STK Procurement 결재 기준 금액(관리자 탭에서 저장 · KRW). 키가 없으면 system_config_final.xlsx 의 PROCUREMENT_*_LIMIT_* → 기본값 순으로 쓴다.',
-      limits: Object.assign({}, d.limits || {}, { [cat]: limPick(T, target, ed) }),
+      limits: Object.assign({}, d.limits || {}, { [cat]: pickAll(target) }),
       updatedBy: user.email, updatedByName: user.name || '', updatedAt: nowIso,
       history: procHistory(fresh).concat([entry]).slice(-200) });
     saved = await writeProcSettings(obj, fresh);
@@ -4041,7 +4129,7 @@ async function saveSslLimits() {
   if (saved) {
     adoptLimits(saved, null);
     logAction('Admin', '결재 기준 금액 변경', Object.assign(base, { 변경: changes.map(c => ({ 항목: c.label, 키: c.k, 이전: c.before, 이후: c.after })), 요약: summary,
-      이전: limPick(T, before, ed), 이후: limPick(T, target, ed), 적용: '저장 이후 새로 상신하는 신청부터(이미 상신된 신청의 결재 라인은 그대로)' }));
+      이전: pickAll(before), 이후: pickAll(target), 적용: '저장 이후 새로 상신하는 신청부터(이미 상신된 신청의 결재 라인은 그대로)' }));
     renderLimitCard(true);
     showAlert('결재 기준 금액을 저장했습니다.', summary.replace(/ \/ /g, ' · ') + ' — 새로 상신하는 신청부터 적용됩니다.');
     return;
@@ -4071,7 +4159,7 @@ async function loadLimitHistory() {
     const when = h => { const k = String(h.atKST || ''); if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(k)) return k.slice(5, 16); const d = new Date(Date.parse(h.at) + 9 * 36e5); return isNaN(d) ? '' : d.toISOString().slice(5, 16).replace('T', ' '); };
     box.innerHTML = list.length ? '<ul class="lim-hist-list">' + list.map(h =>
       '<li><time title="' + esc(h.atKST || h.at || '') + ' KST">' + esc(when(h)) + '</time> · <span class="who" title="' + esc(h.by || '') + '">' + esc(limShortName(h.byName) || h.by || '') + '</span> · ' +
-      (h.changes || []).map(c => esc(c.label || c.k || '') + ' ' + fmtWon(c.before) + ' → <b>' + fmtWon(c.after) + '</b>').join(' · ') + '</li>').join('') + '</ul>'
+      (h.changes || []).map(c => { const f = v => typeof v === 'number' ? fmtWon(v) : esc(String(v == null ? '' : v)); return esc(c.label || c.k || '') + ' ' + f(c.before) + ' → <b>' + f(c.after) + '</b>'; }).join(' · ') + '</li>').join('') + '</ul>'
       : '<div class="lim-h-empty">변경 이력이 없습니다.</div>';
   } catch (e) { box.innerHTML = '<div class="lim-h-empty">변경 이력을 불러오지 못했습니다: ' + esc(aoErr(e)) + '</div>'; }
 }
