@@ -662,7 +662,8 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .bpm-pill:active{background:#d3e7f8}
 .bpm-pill:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(0,120,212,.28);border-color:#0078d4}
 /* 금액 라벨 옆 「Excl. VAT」 — VAT 제외 금액임을 알리는 작은 회색 태그(10-16) */
-.vat-tag{display:inline-block;margin-left:4px;padding:0 6px;height:16px;line-height:16px;border-radius:4px;background:#f3f2f1;border:1px solid #e1dfdd;color:#605e5c;font-size:10.5px;font-weight:600;letter-spacing:.1px;vertical-align:1px;white-space:nowrap}
+.vat-tag{display:inline-flex;align-items:center;margin-left:6px;padding:1px 7px;border-radius:999px;background:#eef3f8;border:1px solid #dbe5ef;color:#4a6176;font-size:9.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;line-height:1.5;vertical-align:1px;white-space:nowrap}   /* 금액 · KRW 환산 라벨 옆 작은 알약 태그(10-16 다듬음) */
+.vat-tag.krw{background:#eef6ee;border-color:#d5e8d4;color:#3f6b3c;text-transform:none;letter-spacing:.1px;font-size:10px}
 .bpm-pill:disabled{background:#f3f2f1;border-color:#e1dfdd;color:#a19f9d;cursor:not-allowed}
 .sup-src{font-size:.7rem;color:#8a8886;margin-top:4px;min-height:1em;line-height:1.5}
 .sup-src .k{color:#0b5fa5;background:#e1f0ff;border-radius:9px;padding:0 7px;font-weight:600;font-size:10px;margin-right:2px}
@@ -1203,13 +1204,13 @@ const PROC_TYPES = {
     attachRequired: true,
     fields: [
       { key: 'reqNo',    col: 'ReqNumber',           type: 'text',     req: false, max: 60,
-        en: 'Req-number of the respective requisition', ko: '구매요청 번호', ph: '예: PR-2026-0153 (없으면 비워 두세요)' },
+        en: 'Req-number of the respective requisition', ko: '구매요청 번호', ph: '예: CTR-PR-2026-10-16_ID-42 (없으면 비워 두세요)' },
       { key: 'desc',     col: 'Description',         type: 'textarea', req: true,  max: 1000,
         en: 'Description of product or service (specification, quantity,)', ko: '품목 · 서비스 내용', ph: '예: 2026 Concur service fee (사양 · 수량 포함)' },
       { key: 'supplier', col: 'RecommendedSupplier', type: 'text',     req: true,  max: 200,
         en: 'Recommended Supplier', ko: '추천 공급업체', picker: 'bp', ph: '업체명 / BP 코드 — BP Master 에서 고르거나 직접 입력' },
       { key: 'reason',   col: 'Reason',              type: 'textarea', req: true,  max: 2000,
-        en: 'Reason for single source recommendation', enSub: '(use attachment if applicable)', ko: '단일 공급 사유', ph: '경쟁 없이 이 업체로 정한 이유 (길면 첨부로 대신하고 요약만)' },
+        en: 'Reason for single source recommendation', enSub: '(use attachment if applicable)', ko: '단일 공급 사유', ph: '해당 업체를 통한 SSL 신청 사유를 최대한 자세히 적어 주세요 — 대체 불가 사유, 기술 · 계약상 제약, 일정 등' },
       { key: 'known',    col: 'DateFirstKnown',      type: 'date',     req: true,
         en: 'Date the requirement was first known', ko: '필요를 알게 된 날', half: true },
       { key: 'lead',     col: 'LeadTime',            type: 'text',     req: true,  max: 60,
@@ -1986,7 +1987,7 @@ function fieldHtml(cat, fd) {
         '<div class="fld"><label style="font-weight:400;color:#605e5c">금액 (Amount) <span class="vat-tag" title="부가세(VAT)를 뺀 금액으로 입력합니다">Excl. VAT</span></label><input type="text" id="' + cat + '-amt" inputmode="decimal" maxlength="20" placeholder="0" onkeydown="numKeyDown(event)" oninput="fmtAmtInput(this, val(\'' + cat + '-cur\')===\'KRW\'); onMoneyChange(\'' + cat + '\')" onblur="numBlur(this, val(\'' + cat + '-cur\')===\'KRW\', \'' + cat + '\')"></div>' +
         '<div class="fld"><label style="font-weight:400;color:#605e5c">통화</label><select id="' + cat + '-cur" onchange="onMoneyChange(\'' + cat + '\',\'cur\')"><option value="KRW">KRW</option></select></div>' +
         '<div class="fld"><label style="font-weight:400;color:#605e5c">환율 (1 단위 = KRW)</label><input type="text" id="' + cat + '-rate" inputmode="decimal" maxlength="16" placeholder="-" oninput="fmtRateInput(this); onMoneyChange(\'' + cat + '\',\'rate\')" onblur="numBlur(this, false, \'' + cat + '\', \'rate\')"></div>' +
-        '<div class="fld"><label style="font-weight:400;color:#605e5c">KRW 환산 (결재 기준)</label><input type="text" id="' + cat + '-krw" readonly tabindex="-1" placeholder="0"></div>' +
+        '<div class="fld"><label style="font-weight:400;color:#605e5c">KRW 환산 <span class="vat-tag krw" title="상신하는 날의 환율로 환산한 금액이 결재 기준이 됩니다">상신일 환율 기준</span></label><input type="text" id="' + cat + '-krw" readonly tabindex="-1" placeholder="0"></div>' +
       '</div>' +
       '<div class="rate-info" id="' + cat + '-rate-info"></div>' +
       '<div id="' + cat + '-tier-note"></div></div>';
