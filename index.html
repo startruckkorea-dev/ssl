@@ -688,6 +688,14 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .bp-inact{background:#fde7e9;color:#a4262c;border-radius:8px;padding:0 6px;font-size:10px;font-weight:700}
 .bp-more{font-size:11px;color:#a19f9d;padding:4px 12px;border-bottom:1px solid #edebe9;margin-bottom:5px}
 .bp-empty{text-align:center;padding:20px;color:#a19f9d;font-size:.8rem}
+/* BP 검색 — 열 때 목록 없음 · Enter/검색으로만 · 감사 기록 안내(v17 · BP-Master 와 같은 규칙) */
+.bp-audit{display:flex;align-items:center;gap:5px;margin:-6px 0 10px;font-size:.68rem;color:#8a8886;line-height:1.4}
+.bp-audit svg{flex:0 0 auto;color:#a19f9d}
+.bp-start{text-align:center;padding:26px 12px 22px;color:#605e5c}
+.bp-start svg{color:#c8c6c4;margin-bottom:8px}
+.bp-start .t{font-size:.82rem;font-weight:600;color:#323130}
+.bp-start .m{font-size:.72rem;color:#8a8886;margin-top:5px;line-height:1.5}
+.bp-hint{font-size:.74rem;color:#a4262c;padding:10px 4px}
 .bp-foot{font-size:11px;color:#a19f9d;margin-top:8px}
 /* 폼 입력 높이 통일 — 날짜 칸(달력 단추 때문에 더 높던 것)을 한 줄 글자 칸과 같은 높이로(작성일 · 신청자 줄, 날짜 · 리드타임 줄, 공급업체 칸) */
 .pform .fld > input[type=text],.pform .fld > input[type=date]{height:34px;line-height:normal;box-sizing:border-box}
@@ -1145,9 +1153,10 @@ window.apsYear = (function () {
     <div class="bpm-hd"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>BP 검색 (Vendor / Customer)</span><button type="button" onclick="closeBpPicker()" aria-label="닫기">✕</button></div>
     <div class="bpm-bd">
       <div class="bpm-sb">
-        <input type="text" id="bp-q" placeholder="BP코드, 이름, 사업자등록번호, Bank Info., Account No. 검색..." maxlength="60" oninput="bpSearch(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();bpSearch(this.value,true)}" autocomplete="off">
-        <button type="button" onclick="bpSearch(document.getElementById('bp-q').value,true)">검색</button>
+        <input type="text" id="bp-q" placeholder="BP 코드 · 이름 · 사업자등록번호 · 계좌번호" maxlength="60" oninput="bpTyping()" onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();bpSearch(this.value)}" autocomplete="off">
+        <button type="button" onclick="bpSearch(document.getElementById('bp-q').value)">검색</button>
       </div>
+      <div class="bp-audit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>검색 내용과 선택한 BP는 감사 목적으로 기록됩니다 · Searches are logged for audit.</span></div>
       <div id="bp-res"></div>
       <div class="bp-foot">목록에 없는 업체(신규 등)는 창을 닫고 칸에 직접 입력하세요.</div>
     </div>
@@ -1221,9 +1230,10 @@ const PROC_TYPES = {
     // 목록 · APS 에 보이는 요청 제목 — 양식에 제목 칸이 없어 Description 첫 줄로 만든다(저장 열 RequestTitle)
     titleOf: v => String(v.desc || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean)[0] || '',
     steps: [
-      { key: 'TL',  role: 'Team Leader (L5)', src: 'flex-tl', slot: 1, ko: '팀장' },
-      { key: 'MC',  role: 'RBO MC (L4)',      src: 'flex-dh', slot: 2, ko: '부서장' },
-      { key: 'CFO', role: 'CFO (L4)',         src: 'cfg', cfgKey: 'PROCUREMENT_CFO' },
+      // 역할 글자에 직급 코드(L5 · L4)를 붙이지 않는다(v17 · 사용자 요청) — 예전 결재행의 「(L5)」 · 「(L4)」 는 roleNoGrade 가 화면에서 뗀다
+      { key: 'TL',  role: 'Team Leader', src: 'flex-tl', slot: 1, ko: '팀장' },
+      { key: 'MC',  role: 'RBO MC',      src: 'flex-dh', slot: 2, ko: '부서장' },
+      { key: 'CFO', role: 'CFO',         src: 'cfg', cfgKey: 'PROCUREMENT_CFO' },
       { key: 'RD',  role: 'RD',               src: 'cfg', cfgKey: 'PROCUREMENT_RD' },
     ],
     /* 결재 기준(양식의 Approval Limit 표 · 사용자 결정 10-15): 설정 키 PROCUREMENT_SSL_LIMIT_L5 · _L4 · _L3 · _MAX(B열 숫자)가 있으면 그 값.
@@ -1427,9 +1437,11 @@ function _aacRoleParse(role){
   // 이름이 없으면 메일을 이름 자리에 쓴다 — 'on behalf of  · a@x.com' 처럼 비지 않게
   return { base: m[1].trim(), name: nm || em, email: nm ? em : '' };
 }
+// 예전 결재행 역할 글자의 직급 코드 「 (L5)」 · 「 (L4)」 를 뗀다(v17 — 화면 · PDF · Excel 에 L4 · L5 를 보이지 않는다. 저장값은 그대로)
+function roleNoGrade(role){ return String(role == null ? '' : role).replace(/\s*\(L\d\)/g, ''); }
 function aacRoleBase(role){
   const p = _aacRoleParse(role);
-  return p ? p.base : String(role == null ? '' : role);
+  return roleNoGrade(p ? p.base : String(role == null ? '' : role));
 }
 function aacRolePill(role, status){
   const p = _aacRoleParse(role);
@@ -1897,7 +1909,8 @@ async function loadBpMaster() {
     console.warn('[BP Master] 로드 실패 — 공급업체는 직접 입력:', e && e.message);
   }
   CATS.forEach(supRender);
-  if (document.getElementById('bp-ov').classList.contains('on')) bpSearch(val('bp-q'));
+  // 로딩 중에 이미 검색을 눌렀으면 그 검색어로 다시(기록은 그때 한 번)
+  if (document.getElementById('bp-ov').classList.contains('on') && _bpLastQ) bpSearch(_bpLastQ);
 }
 function supRender(cat) {
   const el = document.getElementById(cat + '-sup-src'), btn = document.getElementById(cat + '-sup-btn');
@@ -1908,43 +1921,54 @@ function supRender(cat) {
   else if (v) el.innerHTML = '<span class="m">직접 입력</span>' + (BPM.failed ? ' BP 목록을 불러오지 못했습니다' : '');
   else el.innerHTML = BPM.failed ? 'BP 목록을 불러오지 못해 직접 입력합니다 — 업체명 / BP 코드' : '';
 }
+/* BP 검색(v17 · 개인정보 · 감사) — 열 때 목록을 보여 주지 않고, Enter · 「검색」 으로 2자 이상(숫자만이면 4자리 이상)일 때만 찾는다.
+   검색 1번마다 「BP 검색」(검색어 · 결과 건수 · 화면), 고르면 「BP 검색 선택」(BP 코드 · 이름 — 은행 · 계좌번호는 남기지 않음)을 Logging_data 에(IT 운영 계정 제외 규칙 그대로).
+   글자를 칠 때마다 찾거나 기록하지 않는다. 결과는 최대 50건. */
+const BP_SEARCH_MAX = 50;
+let _bpLastQ = '';
+function bpStartHtml() {
+  return '<div class="bp-start"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>' +
+    '<div class="t">BP 코드 · 이름 · 사업자등록번호 · 계좌번호로 검색해 주세요</div>' +
+    '<div class="m">2자 이상 입력 후 Enter 또는 「검색」. 검색 기록은 보안 감사를 위해 시스템에 저장됩니다.</div></div>';
+}
 function openBpPicker(cat) {
   if (BPM.failed) return;
-  _bpFor = cat;
+  _bpFor = cat; _bpLastQ = '';
   const q = document.getElementById('bp-q');
   q.value = '';
+  document.getElementById('bp-res').innerHTML = bpStartHtml();   // 열자마자 목록을 보여 주지 않는다
   document.getElementById('bp-ov').classList.add('on');
-  bpSearch('', true);   // BP-Master 처럼 열자마자 목록(앞 10건)
   setTimeout(() => q.focus(), 50);
 }
 function closeBpPicker() { document.getElementById('bp-ov').classList.remove('on'); _bpFor = null; }
-function bpSearch(q, now) {
-  clearTimeout(_bpTimer);
-  const run = () => {
-    const el = document.getElementById('bp-res');
-    if (!BPM.loaded) { el.innerHTML = '<div class="bp-empty">데이터 로딩 중...</div>'; return; }
-    // BP-Master 와 같은 대상(코드 · 이름 · 한글이름 · 사업자등록번호 · Bank · Account No.) + 숫자만 적은 사업자번호 · 계좌도 찾는다(하이픈 무시)
-    const kw = String(q || '').trim().toLowerCase(), kd = /^[0-9\s-]+$/.test(kw) ? kw.replace(/\D/g, '') : '';
-    const dg = v => String(v || '').replace(/\D/g, '');
-    let out = [];
-    if (!kw) out = BPM.list.slice(0, 10);
-    else {
-      for (const b of BPM.list) {
-        if (b.code.toLowerCase().includes(kw) || b.name.toLowerCase().includes(kw) || (b.nameKo && b.nameKo.toLowerCase().includes(kw)) ||
-            (b.bizNo && b.bizNo.toLowerCase().includes(kw)) || (b.bank && b.bank.toLowerCase().includes(kw)) || (b.accountNo && b.accountNo.toLowerCase().includes(kw)) ||
-            (kd.length >= 3 && (dg(b.bizNo).includes(kd) || dg(b.accountNo).includes(kd)))) { out.push(b); if (out.length >= 50) break; }
-      }
-    }
-    if (!out.length) { el.innerHTML = '<div class="bp-empty">검색 결과 없음 — 목록에 없는 업체는 창을 닫고 직접 입력하세요.</div>'; return; }
-    el.innerHTML = (out.length >= 50 ? '<div class="bp-more">상위 50개 표시</div>' : '') + out.map(b =>
-      '<div class="bp-it" data-bp="' + esc(b.code) + '" tabindex="0">' +
-        '<div class="c">' + esc(b.code) + ' · ' + esc(b.type || '-') + (b.inactive ? ' <span class="bp-inact">비활성</span>' : '') + '</div>' +
-        '<div class="n">' + esc(b.name) + '</div>' +
-        (b.nameKo ? '<div class="s">' + esc(b.nameKo) + '</div>' : '') +
-        '<div class="s">사업자등록번호: ' + esc(b.bizNo || 'Master data 미기재') + '</div>' +
-        '<div class="s">Bank Info.: ' + esc(b.bank || 'Master data 미기재') + ' &nbsp;|&nbsp; <span class="ac">Account No.: ' + esc(b.accountNo || 'Master data 미기재') + '</span></div></div>').join('');
-  };
-  if (now) run(); else _bpTimer = setTimeout(run, 200);
+// 입력 중 — 찾지 않는다(한글 조합 중 Enter 도 검색하지 않음). 칸을 비우면 처음 빈 화면으로, 짧다는 안내가 떠 있으면 지운다
+function bpTyping() {
+  const q = document.getElementById('bp-q'), el = document.getElementById('bp-res');
+  if (!String(q.value || '').trim()) { _bpLastQ = ''; el.innerHTML = bpStartHtml(); return; }
+  if (el.querySelector('.bp-hint')) el.innerHTML = _bpLastQ ? '' : bpStartHtml();
+}
+function bpSearch(q, opt) {
+  opt = opt || {};
+  const el = document.getElementById('bp-res');
+  const raw = String(q || '').trim(), kw = raw.toLowerCase(), kd = /^[0-9\s-]+$/.test(kw) ? kw.replace(/\D/g, '') : '';
+  if (kd ? kd.length < 4 : kw.length < 2) { el.innerHTML = '<div class="bp-hint">' + (kd ? '숫자만으로 찾을 때는 4자리 이상 입력해 주세요.' : '2자 이상 입력해 주세요.') + '</div>'; return; }   // 짧은 검색어 — 찾지도 기록하지도 않는다
+  if (!BPM.loaded) { el.innerHTML = '<div class="bp-empty">데이터 로딩 중...</div>'; _bpLastQ = raw; return; }
+  _bpLastQ = raw;
+  // BP-Master 와 같은 대상(코드 · 이름 · 한글이름 · 사업자등록번호 · 계좌번호 — 은행명은 찾지 않음) + 숫자만 적은 사업자번호 · 계좌도 찾는다(하이픈 무시)
+  const dg = v => String(v || '').replace(/\D/g, '');
+  const hit = BPM.list.filter(b => b.code.toLowerCase().includes(kw) || b.name.toLowerCase().includes(kw) || (b.nameKo && b.nameKo.toLowerCase().includes(kw)) ||
+    (b.bizNo && b.bizNo.toLowerCase().includes(kw)) || (b.accountNo && b.accountNo.toLowerCase().includes(kw)) ||
+    (kd.length >= 4 && (dg(b.bizNo).includes(kd) || dg(b.accountNo).includes(kd))));
+  if (!opt.noLog) aoAudit(_bpFor || CATS[0], 'BP 검색', { 검색어: raw.slice(0, 60), '결과 건수': hit.length, 화면: (PROC_TYPES[_bpFor || CATS[0]] || {}).prefix + ' · 추천 공급업체' });
+  if (!hit.length) { el.innerHTML = '<div class="bp-empty">검색 결과 없음 — 목록에 없는 업체는 창을 닫고 직접 입력하세요.</div>'; return; }
+  const out = hit.slice(0, BP_SEARCH_MAX);
+  el.innerHTML = (hit.length > BP_SEARCH_MAX ? '<div class="bp-more">' + hit.length + '건 중 ' + BP_SEARCH_MAX + '건 표시 — 검색어를 더 구체적으로 입력해 주세요</div>' : '') + out.map(b =>
+    '<div class="bp-it" data-bp="' + esc(b.code) + '" tabindex="0">' +
+      '<div class="c">' + esc(b.code) + ' · ' + esc(b.type || '-') + (b.inactive ? ' <span class="bp-inact">비활성</span>' : '') + '</div>' +
+      '<div class="n">' + esc(b.name) + '</div>' +
+      (b.nameKo ? '<div class="s">' + esc(b.nameKo) + '</div>' : '') +
+      '<div class="s">사업자등록번호: ' + esc(b.bizNo || 'Master data 미기재') + '</div>' +
+      '<div class="s">Bank Info.: ' + esc(b.bank || 'Master data 미기재') + ' &nbsp;|&nbsp; <span class="ac">Account No.: ' + esc(b.accountNo || 'Master data 미기재') + '</span></div></div>').join('');
 }
 function selectBp(code) {
   const b = BPM.list.find(x => x.code === code), cat = _bpFor;
@@ -1954,6 +1978,7 @@ function selectBp(code) {
   const text = b.name + ' / ' + b.code;
   document.getElementById(cat + '-f-supplier').value = text;
   _sup[cat] = { code: b.code, name: b.name, type: b.type, inactive: b.inactive, text };
+  aoAudit(cat, 'BP 검색 선택', { 'BP 코드': b.code, 이름: b.name, 검색어: String(_bpLastQ || '').slice(0, 60), 화면: (PROC_TYPES[cat] || {}).prefix + ' · 추천 공급업체' });   // 은행 · 계좌번호는 남기지 않는다
   closeBpPicker();
   supRender(cat);
 }
@@ -3793,7 +3818,7 @@ async function exportExcel() {
     (data.value || []).sort((a, b) => a.id - b.id).forEach(it => {
       const f = it.fields;
       const hist = (byReq[String(it.id)] || []).sort((a, b) => (a.ApprovalOrder || 0) - (b.ApprovalOrder || 0))
-        .map(a => a.ApprovalOrder + '차 ' + (a.ApproverRole || '') + ' ' + (a.ApproverName || '') + ' [' + (a.Status || '') + ']' + (a.ApprovalDate ? ' ' + fmtDate(a.ApprovalDate) : '')).join(' / ');
+        .map(a => a.ApprovalOrder + '차 ' + roleNoGrade(a.ApproverRole) + ' ' + (a.ApproverName || '') + ' [' + (a.Status || '') + ']' + (a.ApprovalDate ? ' ' + fmtDate(a.ApprovalDate) : '')).join(' / ');
       const att = spText(f.AttachedFiles).split(';').map(x => x.split('||')[0].trim()).filter(Boolean).join(', ');
       rows.push([++no, f.Title || '', f.RequesterEmail || '', f.RequesterName || '', f.RequesterDept || '', ...fcols.map(c => c[1](f)), att, f.Status || '', fmtDate(f.RequestDate), hist]);
     });
@@ -3925,7 +3950,7 @@ function renderLimitCard(force) {
       '<span class="lim-sub">새로 상신하는 신청부터 적용 · 추가 결재자(최대 3명)는 1차 결재자 다음</span></div>' +
     (psErr ? '<div class="lim-warn">⚠ 관리자 설정을 읽지 못해 저장할 수 없습니다 — 새로고침 후 다시 시도해 주세요. <span class="lim-warn-d">' + esc(psErr) + '</span></div>' : '') +
     (info.bad ? '<div class="lim-warn">⚠ 설정 값이 오름차순이 아니어서 기본값을 쓰고 있습니다' +
-      (info.raw ? ' (' + esc(T.limitEdit.map(e => e.k + ' ' + fmtWon(info.raw[e.k])).join(' · ')) + ')' : '') + '. 올바른 값으로 저장하면 바로잡힙니다.</div>' : '') +
+      (info.raw ? ' (' + esc(T.limitEdit.map(e => e.label + ' ' + fmtWon(info.raw[e.k])).join(' · ')) + ')' : '') + '. 올바른 값으로 저장하면 바로잡힙니다.</div>' : '') +
     '<table class="lim-tbl"><thead><tr><th>구간 시작 금액 (KRW)</th><th>결재 라인</th></tr></thead><tbody id="lim-prev-body">' +
       '<tr class="lim-r0"><td><span class="lim-lt">&lt; <span id="lim-min-mirror" class="num">' + fmtWon(T.minOf(L)) + '</span></span></td>' +
         '<td class="lim-line"><span class="none">결재 불필요</span> <span class="lim-muted">상신 불가</span></td></tr>' +
