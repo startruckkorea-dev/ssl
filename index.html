@@ -689,8 +689,8 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .bp-more{font-size:11px;color:#a19f9d;padding:4px 12px;border-bottom:1px solid #edebe9;margin-bottom:5px}
 .bp-empty{text-align:center;padding:20px;color:#a19f9d;font-size:.8rem}
 /* BP 검색 — 열 때 목록 없음 · Enter/검색으로만 · 감사 기록 안내(v17 · BP-Master 와 같은 규칙) */
-.bp-audit{display:flex;align-items:center;gap:5px;margin:-6px 0 10px;font-size:.68rem;color:#8a8886;line-height:1.4}
-.bp-audit svg{flex:0 0 auto;color:#a19f9d}
+.bp-audit{display:flex;align-items:center;gap:4px;margin:-6px 0 10px;font-size:9.5px;font-weight:400;color:#605e5c;line-height:1.3}   /* S-4(10-16) — PDF 출력 안내(C-3)와 같은 모양 */
+.bp-audit svg{flex:0 0 auto}
 .bp-start{text-align:center;padding:26px 12px 22px;color:#605e5c}
 .bp-start svg{color:#c8c6c4;margin-bottom:8px}
 .bp-start .t{font-size:.82rem;font-weight:600;color:#323130}
@@ -742,6 +742,17 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .sslp .ft{position:absolute;left:57pt;right:60pt;top:771pt;font-size:8pt;line-height:1.36}
 .sslp .ft .r{position:absolute;left:395pt;top:0}
 .sslp .over{position:absolute;right:60pt;top:48pt;font-size:6.5pt;color:#a4262c;font-weight:700;letter-spacing:.4pt}
+/* PDF 출력 단추 아래 안내(C-3, 10-16) — 「출력 이력은 Logging 시스템에 보관됩니다」.
+   단추 바로 뒤 형제로 두어, 단추가 style.display='none'(또는 hidden)이면 안내도 같이 숨는다.
+   단추는 모달 제목 줄에 있어 PDF 캡처 대상(본문) 밖이지만, 혹시 몰라 data-html2canvas-ignore 도 붙였다. */
+.pdf-log-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:0 1 auto;min-width:0;margin-left:auto}
+/* 좁은 화면에서 제목 + 단추(안내 포함)가 한 줄에 안 들어가면 단추 묶음만 다음 줄 오른쪽으로 — 제목이 찌그러지지 않게 */
+:has(> .pdf-log-wrap){flex-wrap:wrap;row-gap:6px}
+.pdf-log-row{flex-wrap:wrap;justify-content:flex-end;row-gap:3px !important}
+.pdf-log-note{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:400;color:#605e5c;line-height:1.3;letter-spacing:0;text-align:right;white-space:normal}
+.pdf-log-note svg{flex:0 0 auto}
+.pdf-log-row>.pdf-log-note{flex:1 1 100%;justify-content:flex-end}
+button[style*="display:none"]+.pdf-log-note,button[style*="display: none"]+.pdf-log-note,button[hidden]+.pdf-log-note{display:none !important}
 </style>
 <style id="aps-mobile">
 /* APS 모바일(aps-mobile · ACC Others 10-09 · 10-10 2차 · 10-11 iOS-SELECT 와 같은 규칙) — 767px 이하 전용. 웹 화면 무변경.
@@ -1075,10 +1086,13 @@ window.apsYear = (function () {
     <button class="modal-close" onclick="closeDetail()">&times;</button>
     <div class="modal-title">
       <span>신청 상세 내용</span>
+      <div class="pdf-log-wrap">
       <button id="btn-export-pdf" onclick="exportOfficialPdf()" title="공식 양식(Single Source Letter) + 첨부파일 통합 PDF" style="background:#0078d4;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:all .15s" onmouseover="this.style.background='#005a9e'" onmouseout="this.style.background='#0078d4'">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         공식 PDF 출력
       </button>
+      <span class="pdf-log-note" data-html2canvas-ignore="true"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#c4314b" stroke-width="2.2" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>출력 이력은 Logging 시스템에 보관됩니다</span>
+      </div>
     </div>
     <div id="detail-body"></div>
   </div>
@@ -1156,7 +1170,7 @@ window.apsYear = (function () {
         <input type="text" id="bp-q" placeholder="BP 코드 · 이름 · 사업자등록번호 · 계좌번호" maxlength="60" oninput="bpTyping()" onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();bpSearch(this.value)}" autocomplete="off">
         <button type="button" onclick="bpSearch(document.getElementById('bp-q').value)">검색</button>
       </div>
-      <div class="bp-audit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>검색 내용과 선택한 BP는 감사 목적으로 기록됩니다 · Searches are logged for audit.</span></div>
+      <div class="bp-audit"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#c4314b" stroke-width="2.2" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>검색 이력은 Logging 시스템에 보관됩니다 · Search history is logged</span></div>
       <div id="bp-res"></div>
       <div class="bp-foot">목록에 없는 업체(신규 등)는 창을 닫고 칸에 직접 입력하세요.</div>
     </div>
@@ -1929,7 +1943,7 @@ let _bpLastQ = '';
 function bpStartHtml() {
   return '<div class="bp-start"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>' +
     '<div class="t">BP 코드 · 이름 · 사업자등록번호 · 계좌번호로 검색해 주세요</div>' +
-    '<div class="m">2자 이상 입력 후 Enter 또는 「검색」. 검색 기록은 보안 감사를 위해 시스템에 저장됩니다.</div></div>';
+    '<div class="m">2자 이상 입력 후 Enter 또는 「검색」을 눌러 주세요.</div></div>';
 }
 function openBpPicker(cat) {
   if (BPM.failed) return;
