@@ -937,7 +937,7 @@ button[style*="display:none"]+.pdf-log-note,button[style*="display: none"]+.pdf-
   var av = document.getElementById('aps-av'), av2 = document.getElementById('aps-av2'), nm = document.getElementById('aps-acct-nm');
   function draw() {
     var full = ((src.querySelector('.hdr-user-name') || src).textContent || '').trim();
-    var en = full.match(/\(([A-Za-z][A-Za-z .'-]*)\)\s*$/);                 // 「… (Jimmy Lee)」
+    var en = full.match(/\(([A-Za-z][A-Za-z .'-]*)\)\s*$/);                 // 「… (Gildong Hong)」
     var latin = /^[A-Za-z]/.test(full);                                      // 영문만 있는 이름(John Smith) 은 앞 두 단어 · 두 글자 이니셜
     var short = en ? en[1].trim() : (latin ? full.split(/\s+/).slice(0, 2).join(' ') : (full.split(/\s+/)[0] || ''));
     var ini = (en || latin) ? short.split(/\s+/).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase() : short.slice(0, 1);
@@ -1436,7 +1436,7 @@ function esc(s) {
 /* ── 대리 처리 표기 (AAC 연동) ────────────────────────────────────────
    AAC(결재 대리 지정)가 대리인이 처리한 결재행의 ApproverRole 뒤에
    '· 대리(이름 <메일>)' 를 덧붙인다. 그 꼬리를 그대로 화면에 뿌리면
-   '1차결재자 · 대리(Jimmy Lee <jimmy.lee@hyosung.com>)' 처럼 날값이 노출된다.
+   '1차결재자 · 대리(Gildong Hong <hong.gildong@hyosung.com>)' 처럼 날값이 노출된다.
    본래 역할만 남기고, 대리였다는 사실은 알약으로 따로 보여준다.
    IT-Ticket(1877행 부근)·Goodwill-Approval·aps 와 같은 표기·같은 색이다.
    대리가 아니면 aacRolePill 이 빈 문자열을 돌려주므로 호출부에 조건이 필요 없다. */
@@ -4187,7 +4187,7 @@ async function saveSslLimits() {
   } else limOnInput();
   showAlert('저장하지 못했습니다.', limErrText(err) + ' — 결재 기준은 그대로입니다.', '⚠️');
 }
-// 표시 이름 — 「이준순 스타트럭코리아 IT(Jimmy Lee)」 처럼 괄호가 끝에 있으면 괄호 안만(v12). 메일은 툴팁으로
+// 표시 이름 — 「홍길동 스타트럭코리아 IT(Gildong Hong)」 처럼 괄호가 끝에 있으면 괄호 안만(v12). 메일은 툴팁으로
 function limShortName(n) { const s = String(n || '').trim(), m = s.match(/\(([^()]+)\)\s*$/); return m ? m[1].trim() : s; }
 async function loadLimitHistory() {
   const box = document.getElementById('lim-hist-body'); if (!box) return;
