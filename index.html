@@ -4266,7 +4266,7 @@ async function _ensureLogFolder(driveId, folderPath, t) {
 }
 /* ══ 이력 제외 계정(10-01) ══
    system_config_final.xlsx 의 Role(D열)이 「IT Manager」 · 「IT system service」 인 이메일(IT 담당자 · 서비스 계정)은 시스템 운영 · 점검으로
-   이력이 너무 쌓여 Logging_data 에 남기지 않는다. 명단은 loadSystemConfig 가 설정을 읽을 때 모은다(logSkipCollect).
+   이력이 너무 쌓여 각 시스템 폴더가 아니라 Logging_data/System/<시스템>/… 에 따로 남긴다(10-17 · 예전엔 남기지 않았다 — APS 이력 조회의 「System」 칸에서 따로 본다). 명단은 loadSystemConfig 가 설정을 읽을 때 모은다(logSkipCollect).
    설정을 아직 읽는 중이면 잠깐 기다렸다가 판단하고, 끝내 못 읽으면 전처럼 남긴다(열린 쪽이 기본 — 이력을 잃지 않게). */
 const LOG_SKIP_ROLES = ['it manager', 'it system service'];
 const _logSkipEmails = new Set();
@@ -4286,7 +4286,7 @@ async function logSkipped() {
 function logAction(systemName, action, detail) {
   (async () => {
     try {
-      if (await logSkipped()) return;   // IT 운영 계정(IT Manager · IT system service)은 남기지 않는다(10-01)
+      const _itLog = await logSkipped();   // IT 운영 계정(설정 Role: IT Manager · IT system service) 기록은 Logging_data/System/<시스템>/… 에 따로 쌓는다(10-17 — 예전엔 남기지 않았다)
       const driveId = await _getLogDriveId();
       if (!driveId) return;
       const t = await token();
@@ -4297,7 +4297,7 @@ function logAction(systemName, action, detail) {
       const rawUser = (user && user.email) || 'unknown';
       const userTag = rawUser.split('@')[0].replace(/[^a-zA-Z0-9._-]/g, '_');
       const rand = Math.random().toString(36).slice(2, 6);
-      const folderPath = `Logging_data/Procurement/${systemName}/${dateStr}`;
+      const folderPath = `Logging_data/${_itLog ? 'System/' : ''}Procurement/${systemName}/${dateStr}`;
       if (!(await _ensureLogFolder(driveId, folderPath, t))) return;
       const _lr = await fetch(GRAPH + '/drives/' + driveId + '/root:/' + folderPath + '/' + timeStr + '_' + userTag + '_' + rand + '.json:/content', {
         method: 'PUT', headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
