@@ -1247,6 +1247,8 @@ const PROC_TYPES = {
       // 역할 글자에 직급 코드(L5 · L4)를 붙이지 않는다(v17 · 사용자 요청) — 예전 결재행의 「(L5)」 · 「(L4)」 는 roleNoGrade 가 화면에서 뗀다
       { key: 'TL',  role: 'Team Leader', src: 'flex-tl', slot: 1, ko: '팀장' },
       { key: 'MC',  role: 'RBO MC',      src: 'flex-dh', slot: 2, ko: '부서장' },
+      // Controlling manager(10-20 · Procurement 담당 요청 메일 · SMR 결재표의 「Controller」) — 설정 키 PROCUREMENT_CONTROLLING
+      { key: 'CTRL', role: 'Controller', src: 'cfg', cfgKey: 'PROCUREMENT_CONTROLLING', ko: 'Controlling manager' },
       { key: 'CFO', role: 'CFO',         src: 'cfg', cfgKey: 'PROCUREMENT_CFO' },
       { key: 'RD',  role: 'RD',               src: 'cfg', cfgKey: 'PROCUREMENT_RD' },
     ],
@@ -1264,8 +1266,8 @@ const PROC_TYPES = {
        MAX 는 결재 판정에 쓰지 않고 공식 PDF 결재표 RD 줄 「< 2,600,000,000 KRW」 (양식 문구)에만 쓰여 카드에는 두지 않는다(v12). */
     limitEdit: [
       { k: 'L5', label: 'SSL 작성 최소 금액' },
-      { k: 'L4', label: 'RBO MC · CFO 결재 시작 금액' },
-      { k: 'L3', label: 'RD 결재 시작 금액' },
+      { k: 'L4', label: 'CFO · RD 결재 시작 금액' },
+      { k: 'L3', label: '상위 구간 시작 금액' },
     ],
     limitReadOnly: [   // 화면에 칸을 두지 않는다(v12) — RD 시작 금액 검증 문구의 이름으로만 쓴다
       { k: 'MAX', label: '공식 PDF 결재표 RD 줄 상한' },
@@ -1274,7 +1276,11 @@ const PROC_TYPES = {
     /* 구간별 결재 라인(v13 · 관리자 탭에서 바꿈) — 구간 시작 키(L5 · L4 · L3) → steps key 목록(늘 위 steps 의 차례 = 직급 순).
        L.lines 가 없거나 잘못된 구간은 기본값. 사람을 찾는 방법(조직도 · 설정 키)은 steps 그대로이고 새 출처는 없다. */
     bandKeys: ['L5', 'L4', 'L3'],
-    lineDefaults: { L5: ['TL'], L4: ['TL', 'MC', 'CFO'], L3: ['TL', 'MC', 'CFO', 'RD'] },
+    /* 10-20 결재 라인(Procurement 담당 메일 · Signature Mandate Regulation C. Purchasing Operations):
+         6,500,000 ~ 25,999,999 KRW → Team Leader → Department Head(RBO MC) → Controlling manager
+         26,000,000 KRW 이상        → Team Leader → Department Head(RBO MC) → Controlling manager → CFO → RD (130,000,000 이상 구간도 같음)
+       예전(10-15) 기본 라인은 L5 TL · L4 TL→MC→CFO · L3 +RD. 그때 관리자 탭에 저장한 라인(lv 없음)은 읽지 않는다(LINES_VER). */
+    lineDefaults: { L5: ['TL', 'MC', 'CTRL'], L4: ['TL', 'MC', 'CTRL', 'CFO', 'RD'], L3: ['TL', 'MC', 'CTRL', 'CFO', 'RD'] },
     normLine(arr) {
       const keys = this.steps.map(s => s.key), set = new Set((Array.isArray(arr) ? arr : []).map(String));
       return keys.filter(k => set.has(k));   // 모르는 키는 버리고 직급 순으로
@@ -1298,11 +1304,14 @@ const PROC_TYPES = {
     /* 공식 PDF 결재표의 「Approval Limit」 칸 — 원본 양식처럼 「그 결재자가 처음 들어가는 구간」(v13: 그 신청의 결재 라인 기준으로 구한다).
        기본 라인이면 예전과 같다(TL: L5~L4 · MC · CFO: L4~L3 · RD: L3~MAX). 어느 구간에도 없는 역할은 null(결재표에 줄을 두지 않는다). */
     limitCell(stepKey, L) {
+      /* 10-20: SMR 결재표처럼 「그 결재자가 처음 들어가는 구간 ~ 다음에 새 결재자가 들어가는 구간」. 뒤에 새로 들어가는 사람이 없으면 상한 없이 「≥ X KRW」.
+         (예: TL · MC · Controller = ≥ 6,500,000 & < 26,000,000 · CFO · RD = ≥ 26,000,000) */
       const w = n => Number(n).toLocaleString('en-US'), lines = this.linesOf(L), b = this.bandKeys;
-      const i = b.findIndex(k => lines[k].includes(stepKey));
+      const entry = k => b.findIndex(x => lines[x].includes(k));
+      const i = entry(stepKey);
       if (i < 0) return null;
-      const lo = L[b[i]], hi = i + 1 < b.length ? L[b[i + 1]] : L.MAX;
-      return '≥ ' + w(lo) + ' KRW &amp;<br>&lt; ' + w(hi) + ' KRW';
+      const later = this.steps.map(s => entry(s.key)).filter(j => j > i).sort((x, y) => x - y)[0];
+      return later != null ? '≥ ' + w(L[b[i]]) + ' KRW &amp;<br>&lt; ' + w(L[b[later]]) + ' KRW' : '≥ ' + w(L[b[i]]) + ' KRW';
     },
     listCols: [
       { label: '공급업체', w: '190px', cell: f => '<span title="' + esc(f.RecommendedSupplier || '') + '">' + esc(f.RecommendedSupplier || '-') + '</span>' },
@@ -2503,6 +2512,7 @@ function adminEmailsOf(cfg) { return [...new Set([...cfgSeqEmails(cfg, CFG.ADMIN
 function itEmailsOf(cfg) { return [...new Set([...cfgEmails(cfg, [CFG.IT]), ...cfgSeqEmails(cfg, CFG.IT + '_')].map(e => e.toLowerCase()))]; }
 /* 결재 기준 금액(10-16 v11) — 키마다 ① 관리자 설정(Procurement.json · 관리자 탭) ② 설정 파일(system_config_final.xlsx PROCUREMENT_SSL_LIMIT_* · 읽기만, 예전 방식 호환)
    ③ 기본값. src: 'app' · 'cfg' · 'def'. 합친 값이 오름차순이 아니면 셋 모두 기본값으로 두고 경고(bad). */
+const LINES_VER = 2;
 function limitsFromCfg(cfg, cat, psData) {
   const T = PROC_TYPES[cat], L = Object.assign({}, T.limitDefaults), src = {};
   const app = (psData && psData.limits && psData.limits[cat]) || {};
@@ -2513,7 +2523,8 @@ function limitsFromCfg(cfg, cat, psData) {
   });
   // 구간별 결재 라인(v13) — 관리자 설정에만 있다(설정 파일 키 없음). 빈 · 잘못된 구간은 linesOf 가 기본값으로
   if (T.lineDefaults) {
-    const rl = app.lines && typeof app.lines === 'object' ? app.lines : null;
+    // 10-20 결재 라인 개편(Controller 추가) 전에 저장한 라인(lv < LINES_VER)은 쓰지 않고 새 기본값 — 관리자가 다시 저장하면 lv 가 붙는다
+    const rl = app.lines && typeof app.lines === 'object' && Number(app.lv) >= LINES_VER ? app.lines : null;
     L.lines = T.linesOf({ lines: rl || {} });
     src.lines = rl ? 'app' : 'def';
   }
@@ -3669,7 +3680,7 @@ function sslPdfPages(f, rows, L) {
     blocks.push(label + '<div class="val">' + v + '</div>');
   });
   const apv = '<div class="apv"><div class="h"><b>Approval/Signature of requesting department according to the threshold for purchase requisition of the respective Procurement Policy B63.</b><br>' +
-    '- Purchase Order(Spot Buy): Attach SSL to PR for approval according to DTK SMR<br>- Purchase Contract(Blanket Order): Followed approval with signature is required</div>' +
+    '- Purchase Order(Spot Buy): Attach SSL to PR for approval according to STK SMR<br>- Purchase Contract(Blanket Order): Followed approval with signature is required</div>' +
     '<div class="d">Hereby or by approving the related electronic document I/we declare that I/we approve to exclude Competition and that I/we will accept potential additional costs for the company due to this exclusion of competition.</div></div>';
   const col = '<colgroup><col style="width:95pt"><col style="width:80pt"><col style="width:97pt"><col style="width:63pt"><col style="width:105pt"><col style="width:89.5pt"></colgroup>';
   const head = '<table class="at">' + col + '<thead><tr><th>Approval Limit<sup>1</sup></th><th>Approver</th><th>Name</th><th>Department</th><th>Signature</th><th>Date</th></tr></thead></table>';
@@ -3679,19 +3690,27 @@ function sslPdfPages(f, rows, L) {
     if (base === EXTRA_ROLE) { extras.push(a); return; }   // 추가 결재자(10-15) — 차수 순으로 Team Leader 줄 바로 아래에
     const st = T.steps.find(s => s.role === base); if (st && !byKey[st.key]) byKey[st.key] = a; });
   extras.sort((x, y) => (Number(x.ApprovalOrder) || 0) - (Number(y.ApprovalOrder) || 0));
-  const tr = (limit, role, a, cls) => {
+  // 10-20: 같은 구간 줄은 「Approval Limit」 칸을 하나로 합친다(SMR 결재표처럼) — span 0 이면 위 줄에 합쳐져 칸을 두지 않는다
+  const tr = (limit, role, a, cls, span) => {
     const ok = a && (a.Status || '').trim() === '승인';
-    return '<tr class="' + (cls || '') + '"><td class="lim">' + limit + '</td><td class="lim">' + role + '</td>' +
+    const limTd = span === 0 ? '' : '<td class="lim"' + (span > 1 ? ' rowspan="' + span + '"' : '') + '>' + limit + '</td>';
+    return '<tr class="' + (cls || '') + '">' + limTd + '<td class="lim">' + role + '</td>' +
       '<td class="who">' + (a ? esc(a.ApproverName || '') : '') + '</td><td class="who">' + (a ? esc(a.ApproverDept || '') : '') + '</td>' +
       '<td class="sig">' + (a ? sslStampHtml(a) : '') + '</td><td class="dt">' + (ok && a.ApprovalDate ? esc(dotDate(fmtDate(a.ApprovalDate))) : '') + '</td></tr>';
   };
-  const exRows = extras.map(a => tr('Additional approval<br>(Step ' + esc(String(a.ApprovalOrder || '')) + ')', esc(EXTRA_ROLE), a, 'ex'));
-  // v13: 그 신청의 결재 라인 어느 구간에도 없는 역할은 줄을 두지 않는다. 추가 결재자는 결재표 첫 줄 바로 아래(결재선 1차 다음과 같은 자리)
+  // v13: 그 신청의 결재 라인 어느 구간에도 없는 역할은 줄을 두지 않는다. 추가 결재자는 결재표 첫 줄 바로 아래(결재선 1차 다음과 같은 자리) · 그 구간 칸에 합친다
   const shown = T.steps.map(st => ({ st, lim: T.limitCell(st.key, L) })).filter(x => x.lim || byKey[x.st.key]);
   const firstKey = (T.steps.filter(st => byKey[st.key]).sort((x, y) => (Number(byKey[x.key].ApprovalOrder) || 0) - (Number(byKey[y.key].ApprovalOrder) || 0))[0] || (shown[0] || {}).st || {}).key;
-  const body = '<table class="at">' + col + '<tbody>' + shown.map(x =>
-    tr(x.lim || '', esc(x.st.role), byKey[x.st.key]) + (x.st.key === firstKey ? exRows.join('') : '')
-  ).join('') + '<tr class="endbar"><td colspan="6"></td></tr></tbody></table>';
+  const lines = [];
+  shown.forEach(x => {
+    lines.push({ lim: x.lim || '', role: esc(x.st.role), a: byKey[x.st.key] });
+    if (x.st.key === firstKey) extras.forEach(a => lines.push({ lim: x.lim || '', role: esc(EXTRA_ROLE) + '<br>(Step ' + esc(String(a.ApprovalOrder || '')) + ')', a, cls: 'ex' }));
+  });
+  const body = '<table class="at">' + col + '<tbody>' + lines.map((r, i) => {
+    let span = 0;
+    if (i === 0 || lines[i - 1].lim !== r.lim) { span = 1; while (i + span < lines.length && lines[i + span].lim === r.lim) span++; }
+    return tr(r.lim, r.role, r.a, r.cls, span);
+  }).join('') + '<tr class="endbar"><td colspan="6"></td></tr></tbody></table>';
   const fn = '<div class="fn"><div class="rule"></div><sup>1</sup> If a Blanket Order is created by NPM Procurement DTAG with a specific supplier, the single source letter should be used.<br>&nbsp;&nbsp;It is the responsibility of the originator of the requisition to meet the effective regulations.</div>';
   const ft = '<div class="ft">NPM Procurement: Single Source Letter of Justification<span class="r">Valid as of:</span><br>04/2022</div>';
   const over = (f.Status || '').trim() && (f.Status || '').trim() !== '승인완료' ? '<div class="over">' + esc(f.Title || '') + ' · ' + esc((f.Status || '').trim() === '대기' ? 'IN APPROVAL' : (f.Status || '').trim() === '반려' ? 'REJECTED' : (f.Status || '').trim() === '철회' ? 'WITHDRAWN' : f.Status) + '</div>'
@@ -4167,7 +4186,7 @@ async function saveSslLimits() {
   const wasL = T.linesOf ? T.linesOf(before) : null;
   if (st.lines) target.lines = st.lines;
   // 저장 · 기록에 쓰는 값 — 금액 셋 + (v13) 구간별 결재 라인
-  const pickAll = L => Object.assign(limPick(T, L, ed), T.linesOf ? { lines: T.linesOf(L) } : {});
+  const pickAll = L => Object.assign(limPick(T, L, ed), T.linesOf ? { lines: T.linesOf(L), lv: LINES_VER } : {});
   const changes = st.changed.map(k => ({ k, key: T.limitKeys[k], label: limLabelOf(T, k), before: Number(before[k]), after: Number(target[k]) }))
     .concat(st.lchanged.map(b => ({ k: 'lines.' + b, label: bandLabel(target, b), before: lineCodes(wasL[b]), after: lineCodes(st.lines[b]) })));
   const fv = v => typeof v === 'number' ? fmtWon(v) : String(v);
