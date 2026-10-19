@@ -202,6 +202,15 @@ table.lst td.c-no{color:#a19f9d;font-size:.74rem}
 /* 결재 기준 금액 카드(관리자 탭 · v11 · v12 간결하게) — 새로 더한 요소만(기존 요소의 모양은 바꾸지 않는다) */
 .lim-card{border:1px solid #edebe9;border-radius:8px;padding:12px 16px 10px;margin-bottom:16px;background:#fff;max-width:760px}
 .lim-hd{display:flex;align-items:baseline;gap:2px 12px;flex-wrap:wrap;margin-bottom:8px}
+/* 10-20 접기 — 한 줄 요약(구간 · 결재 라인)만 보이고 > 를 누르면 펼친다(펼침 상태는 이 브라우저에 기억) */
+.lim-tog{width:100%;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left;font-family:inherit;align-items:center}
+.lim-card.closed .lim-tog{margin-bottom:0}
+.lim-chev{display:inline-block;width:12px;color:#8a8886;font-size:.85rem;transition:transform .15s}
+.lim-card.open .lim-chev{transform:rotate(90deg)}
+.lim-sum{font-size:.72rem;color:#605e5c;flex:1;min-width:0}
+.lim-sum b{color:#323130;font-weight:600}
+.lim-more{font-size:.7rem;color:#8a8886;white-space:nowrap}
+.lim-note{font-size:.72rem;color:#8a8886;margin:2px 0 8px}
 .lim-title{font-size:.9rem;font-weight:700;color:#323130}
 .lim-sub{font-size:.72rem;color:#8a8886}
 .lim-warn{font-size:.72rem;color:#7d5700;background:#fff8e1;border-radius:4px;padding:5px 8px;margin-bottom:6px;overflow-wrap:anywhere}
@@ -731,10 +740,12 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .sslp table.at td.dt{font-size:7.6pt}
 .sslp table.at tr.ex td.lim{color:#6b5310}   /* 추가 결재자 줄(10-15) — 양식 구간 칸 대신 「Additional approval (Step N)」 */
 .sslp table.at tr.endbar td{height:3.5pt;padding:0;background:#bfbfbf;border-left:none;border-right:none}
-.sslp .stamp{display:inline-block;border:1px solid #6b7280;border-radius:3px;padding:1.5pt 4pt;line-height:1.25;font-size:6.6pt;color:#1f2937;text-align:center;white-space:nowrap}
-.sslp .stamp .t{font-weight:700;font-size:6.8pt}
-.sslp .stamp.rej{border-color:#a4262c;color:#a4262c}
-.sslp .stamp .dg{display:block;font-size:6pt;color:#8a5a00}
+.sslp .stamp{display:inline-block;border:1.1px solid #0078d4;border-radius:4px;padding:2pt 5pt;line-height:1.3;font-size:6.6pt;color:#333;text-align:center;white-space:nowrap}
+.sslp .stamp .t{font-weight:700;font-size:7pt;color:#0078d4}
+.sslp .stamp .dt{color:#666;font-size:6.3pt}
+.sslp .stamp.rej{border-color:#a4262c}
+.sslp .stamp.rej .t{color:#a4262c}
+.sslp .stamp .dg{display:block;font-size:6pt;color:#8a6116}
 .sslp .refer{margin:3pt 0 0 52pt;font-size:7.3pt}
 .sslp .fn{position:absolute;left:57pt;right:60pt;top:716pt;font-size:7.5pt;line-height:1.38}
 .sslp .fn .rule{width:145pt;border-top:.75pt solid #000;margin-bottom:3pt}
@@ -1087,10 +1098,16 @@ window.apsYear = (function () {
     <div class="modal-title">
       <span>신청 상세 내용</span>
       <div class="pdf-log-wrap">
+      <div style="display:flex;gap:6px">
+      <button id="btn-export-detail-pdf" onclick="exportDetailPdf()" title="화면에 보이는 상세 내용 그대로 + 첨부파일 PDF" style="background:#fff;color:#0078d4;border:1px solid #0078d4;border-radius:8px;padding:6px 14px;font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:all .15s" onmouseover="this.style.background='#f0f6ff'" onmouseout="this.style.background='#fff'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        상세화면 PDF
+      </button>
       <button id="btn-export-pdf" onclick="exportOfficialPdf()" title="공식 양식(Single Source Letter) + 첨부파일 통합 PDF" style="background:#0078d4;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:all .15s" onmouseover="this.style.background='#005a9e'" onmouseout="this.style.background='#0078d4'">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        공식 PDF 출력
+        공식 양식 PDF
       </button>
+      </div>
       <span class="pdf-log-note" data-html2canvas-ignore="true"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#c4314b" stroke-width="2.2" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>출력 이력은 Logging 시스템에 보관됩니다</span>
       </div>
     </div>
@@ -3247,7 +3264,7 @@ async function openDetail(cat, reqId, opt) {
     const row = (l, v) => '<div class="det-row"><span class="det-lbl">' + esc(l) + '</span><span class="det-val">' + esc(v == null || v === '' ? '-' : v) + '</span></div>';
     const rowH = (l, v) => '<div class="det-row"><span class="det-lbl">' + esc(l) + '</span><span class="det-val">' + (v || '-') + '</span></div>';
     const stPill = (v) => '<span class="st ' + stClass(v) + '">' + esc(v || '대기') + '</span>';
-    let body = sec('기본 정보') + row('제목', f.Title) + row('신청자', (f.RequesterName ? f.RequesterName + ' · ' : '') + (f.RequesterEmail || '')) +
+    let body = sec('기본 정보') + row('제목', f.Title) + row('신청자', f.RequesterEmail || f.RequesterName || '')   /* 10-20 GW 처럼 메일만 */ +
       rowH('상태', stPill(f.Status)) + row('신청일', f.RequestDate ? fmtDate(f.RequestDate) : '-') +
       sec(esc(T.fullLabel)) + detailFieldRows(cat, f);
     body += sec('첨부파일') + attachHtml(f.AttachedFiles);
@@ -3655,8 +3672,9 @@ function sslStampHtml(a) {
   if (st !== '승인' && st !== '반려') return '';
   const d = fmtDate(a.ApprovalDate);
   const p = _aacRoleParse(a.ApproverRole);
-  return '<span class="stamp' + (st === '반려' ? ' rej' : '') + '"><span class="t">' + (st === '반려' ? '☒ 반려' : '☑ 전자결재') + '</span><br>' + esc(a.ApproverName || '') + '<br>' + esc(d) +
-    (p ? '<span class="dg">대리 · ' + esc(p.name || p.email) + ' 님 대신</span>' : '') + '</span>';
+  // 10-20 ACC Voucher 공식 양식의 전자결재 도장과 같은 모양(파란 테두리 · ✅ 전자결재 / ❌ 반려 · 이름 · 일시 · 대리면 on behalf of)
+  return '<span class="stamp' + (st === '반려' ? ' rej' : '') + '"><span class="t">' + (st === '반려' ? '❌ 반려' : '✅ 전자결재') + '</span><br>' + esc(a.ApproverName || '') +
+    (p ? '<span class="dg">on behalf of ' + esc(p.name || p.email) + '</span>' : '<br>') + '<span class="dt">' + esc(d) + '</span></span>';
 }
 function sslPdfPages(f, rows, L) {
   const T = PROC_TYPES.ssl, w = n => Number(n).toLocaleString('en-US');
@@ -3738,6 +3756,76 @@ async function layoutPdfPages(P) {
   }
   host.innerHTML = '';
   return pages.map(p => typeof p === 'string' ? page(p, false) : page(p.html, p.fn));
+}
+
+/* 상세화면 PDF(10-20 · ACC Voucher 「상세화면 PDF」 와 같은 방식) — 상세 창 내용을 그대로 그림으로 떠 A4 세로로 나누고, 첨부를 뒤에 붙인다.
+   결재 단추 줄은 빼고, 안쪽 스크롤로 잘리는 칸은 펼쳐서 뜬다. 기록은 「PDF 출력 · 종류: 상세 화면」. */
+async function exportDetailPdf() {
+  if (!_detail) return;
+  const btn = document.getElementById('btn-export-detail-pdf');
+  const orig = btn.innerHTML; btn.innerHTML = '⏳ 생성 중...'; btn.disabled = true;
+  const cat = _detail.cat, T = PROC_TYPES[cat], f = _detail.fields || {};
+  const body = document.getElementById('detail-body');
+  const hidden = [], restore = [];
+  try {
+    if (typeof PDFLib === 'undefined' || typeof html2canvas === 'undefined')
+      throw new Error('PDF 라이브러리를 불러오지 못했습니다. 새로고침(Ctrl+F5) 후 다시 시도해 주세요. 계속되면 ' + itTeam('IT팀') + '에 알려주세요.');
+    body.querySelectorAll('.modal-action,.no-print').forEach(el => { hidden.push([el, el.style.display]); el.style.display = 'none'; });
+    body.querySelectorAll('[style*="overflow"],[style*="max-height"]').forEach(el => { restore.push([el, el.getAttribute('style')]); el.style.maxHeight = 'none'; el.style.overflow = 'visible'; });
+    const cvs = await html2canvas(body, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#fff', scrollY: 0, windowWidth: 900 });
+    restore.forEach(([el, st]) => { if (st === null) el.removeAttribute('style'); else el.setAttribute('style', st); }); restore.length = 0;
+    hidden.forEach(([el, d]) => { el.style.display = d; }); hidden.length = 0;
+    const { PDFDocument } = PDFLib;
+    const doc = await PDFDocument.create();
+    const A4W = 595, A4H = 842, hdrH = 22, marginPt = 30;
+    const now = new Date();
+    const _ds = apsPrintStamp('출력일시: ' + now.toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' }) + ' ' + now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Seoul' }));
+    const makeHdrPng = (left, right) => {
+      const hc = document.createElement('canvas'); hc.width = 1190; hc.height = 28;
+      const hx = hc.getContext('2d'); const g = hx.createLinearGradient(0, 0, hc.width, 0);
+      g.addColorStop(0, '#0f2744'); g.addColorStop(1, '#0a4a8a'); hx.fillStyle = g; hx.fillRect(0, 0, hc.width, hc.height);
+      hx.fillStyle = '#3b82f6'; hx.fillRect(0, hc.height - 2, hc.width, 2);
+      hx.textBaseline = 'middle'; hx.font = '400 12px "Malgun Gothic","Apple SD Gothic Neo",sans-serif';
+      const rw = hx.measureText(right).width;
+      hx.fillStyle = '#fff'; hx.font = '500 13px "Malgun Gothic","Apple SD Gothic Neo",sans-serif';
+      hx.fillText(apsFitText(hx, left, hc.width - rw - 58), 14, 13);
+      hx.textAlign = 'right'; hx.font = '400 12px "Malgun Gothic","Apple SD Gothic Neo",sans-serif';
+      hx.fillStyle = 'rgba(255,255,255,.6)'; hx.fillText(right, hc.width - 14, 13);
+      return apsU8FromDataUrl(hc.toDataURL('image/png'));
+    };
+    const hdrImg = await doc.embedPng(makeHdrPng('STK Procurement · ' + T.fullLabel + ' · 상세 화면 · ' + (f.Title || ''), _ds));
+    const printW = A4W - marginPt * 2, printH = A4H - hdrH - marginPt * 2;
+    const pxPerPt = cvs.width / printW, sliceH = Math.floor(printH * pxPerPt);
+    for (let y = 0; y < cvs.height; y += sliceH) {
+      const h = Math.min(sliceH, cvs.height - y);
+      const sc = document.createElement('canvas'); sc.width = cvs.width; sc.height = h;
+      sc.getContext('2d').drawImage(cvs, 0, y, cvs.width, h, 0, 0, cvs.width, h);
+      const img = await doc.embedJpg(apsU8FromDataUrl(sc.toDataURL('image/jpeg', 0.92)));
+      const pg = doc.addPage([A4W, A4H]);
+      pg.drawImage(hdrImg, { x: 0, y: A4H - hdrH, width: A4W, height: hdrH });
+      pg.drawImage(img, { x: marginPt, y: A4H - hdrH - marginPt - h / pxPerPt, width: printW, height: h / pxPerPt });
+    }
+    const nForm = doc.getPageCount();
+    await apsAppendAttachmentPages(doc, apsAttachmentItems(body), {
+      token: await token(), header: t => makeHdrPng(t, _ds), A4W, A4H, hdrH, marginPt,
+      onFile: n => { btn.textContent = '⏳ ' + n.substring(0, 20) + '...'; } });
+    const bytes = await doc.save();
+    const kd = new Date(now.getTime() + 9 * 3600 * 1000).toISOString().substring(0, 10);
+    const fileName = 'Procurement_' + T.prefix + '_' + String(f.Title || _detail.reqId).replace(/[^A-Za-z0-9._-]/g, '_') + '_상세화면_' + kd + '.pdf';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+    a.download = fileName; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    window.__lastPdf = { name: fileName, bytes, formPages: nForm, pages: doc.getPageCount() };
+    try { logAction(T.prefix, 'PDF 출력', { 신청: f.Title || '', id: String(_detail.reqId || ''), 상태: f.Status || '', 종류: '상세 화면 + 첨부', 파일: fileName, 페이지: doc.getPageCount() }); } catch (le) {}
+  } catch (e) {
+    try { logAction(T.prefix, 'PDF 출력 실패', { 신청: f.Title || '', id: String(_detail.reqId || ''), 종류: '상세 화면', 오류: aoErr(e) }); } catch (le) {}
+    alert('PDF 생성 오류: ' + e.message); console.error(e);
+  } finally {
+    restore.forEach(([el, st]) => { if (st === null) el.removeAttribute('style'); else el.setAttribute('style', st); });
+    hidden.forEach(([el, d]) => { el.style.display = d; });
+    btn.innerHTML = orig; btn.disabled = false;
+  }
 }
 async function exportOfficialPdf() {
   if (!_detail) return;
@@ -4005,12 +4093,17 @@ function renderLimitCard(force) {
   const src = k => { const s = info.src[k] || 'def'; return '<span class="lim-src" data-src="' + s + '" title="값 출처: ' + LIM_SRC_LABEL[s] +
     (s === 'app' ? ' (관리자 탭에서 저장한 값)' : s === 'cfg' ? ' (설정 파일 키 ' + T.limitKeys[k] + ' — 읽기만)' : '') + '">' + LIM_SRC_LABEL[s] + '</span>'; };
   const histOpen = !!(document.getElementById('lim-hist') || {}).open;
+  let open = false; try { open = localStorage.getItem('procu.limOpen') === '1'; } catch (e) {}
+  card.classList.toggle('open', open); card.classList.toggle('closed', !open);
+  const sumTxt = T.limitEdit.map(e => '<b>' + fmtWon(L[e.k]) + '~</b> ' + esc(_limLines ? lineCodes(_limLines[e.k]) : '')).join(' · ');
   card.innerHTML =
-    '<div class="lim-hd"><span class="lim-title">⚙️ 결재 기준 금액 · ' + esc(T.prefix) + '</span>' +
-      '<span class="lim-sub">새로 상신하는 신청부터 적용 · 추가 결재자(최대 3명)는 1차 결재자 다음</span></div>' +
+    '<button type="button" class="lim-hd lim-tog" id="lim-tog" aria-expanded="' + open + '" aria-controls="lim-body" onclick="limToggleCard()">' +
+      '<span class="lim-chev" aria-hidden="true">›</span><span class="lim-title">⚙️ 결재 기준 금액 · ' + esc(T.prefix) + '</span>' +
+      '<span class="lim-sum" id="lim-sum">' + sumTxt + '</span><span class="lim-more" id="lim-more">' + (open ? '접기' : '자세히') + '</span></button>' +
     (psErr ? '<div class="lim-warn">⚠ 관리자 설정을 읽지 못해 저장할 수 없습니다 — 새로고침 후 다시 시도해 주세요. <span class="lim-warn-d">' + esc(psErr) + '</span></div>' : '') +
     (info.bad ? '<div class="lim-warn">⚠ 설정 값이 오름차순이 아니어서 기본값을 쓰고 있습니다' +
       (info.raw ? ' (' + esc(T.limitEdit.map(e => e.label + ' ' + fmtWon(info.raw[e.k])).join(' · ')) + ')' : '') + '. 올바른 값으로 저장하면 바로잡힙니다.</div>' : '') +
+    '<div id="lim-body"' + (open ? '' : ' style="display:none"') + '><div class="lim-note">새로 상신하는 신청부터 적용 · 추가 결재자(최대 3명)는 1차 결재자 다음</div>' +
     '<table class="lim-tbl"><thead><tr><th>구간 시작 금액 (KRW)</th><th>결재 라인</th></tr></thead><tbody id="lim-prev-body">' +
       '<tr class="lim-r0"><td><span class="lim-lt">&lt; <span id="lim-min-mirror" class="num">' + fmtWon(T.minOf(L)) + '</span></span></td>' +
         '<td class="lim-line"><span class="none">결재 불필요</span> <span class="lim-muted">상신 불가</span></td></tr>' +
@@ -4028,9 +4121,18 @@ function renderLimitCard(force) {
     '<div class="lim-actions"><span class="lim-msg" id="lim-msg" aria-live="polite"></span>' +
       '<button type="button" class="lim-btn" id="lim-reset" onclick="limResetInputs()">되돌리기</button>' +
       '<button type="button" class="lim-btn primary" id="lim-save" onclick="openLimitConfirm()">저장</button></div>' +
-    '<details class="lim-hist" id="lim-hist"' + (histOpen ? ' open' : '') + ' ontoggle="if(this.open)loadLimitHistory()"><summary>변경 이력</summary><div id="lim-hist-body"></div></details>';
+    '<details class="lim-hist" id="lim-hist"' + (histOpen ? ' open' : '') + ' ontoggle="if(this.open)loadLimitHistory()"><summary>변경 이력</summary><div id="lim-hist-body"></div></details></div>';
   limOnInput();
   if (histOpen) loadLimitHistory();
+}
+function limToggleCard() {
+  const card = document.getElementById('lim-card'), body = document.getElementById('lim-body'); if (!card || !body) return;
+  const open = !card.classList.contains('open');
+  card.classList.toggle('open', open); card.classList.toggle('closed', !open);
+  body.style.display = open ? '' : 'none';
+  const t = document.getElementById('lim-tog'); if (t) t.setAttribute('aria-expanded', String(open));
+  const m = document.getElementById('lim-more'); if (m) m.textContent = open ? '접기' : '자세히';
+  try { localStorage.setItem('procu.limOpen', open ? '1' : '0'); } catch (e) {}
 }
 function limState() {
   const cat = _currentCat, T = PROC_TYPES[cat], cur = limitsOf(cat), out = { vals: {}, errs: {}, changed: [], ok: true, dirty: false };
