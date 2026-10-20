@@ -447,17 +447,11 @@ body.rd-rule .appr-line-preview.rd-only{display:block}
 .modal-title{font-size:1rem;font-weight:700;color:#323130;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #edebe9;display:flex;align-items:center;justify-content:space-between;gap:10px}
 /* 여러 줄 입력은 라벨을 위에 두고 값을 아래 전체 폭으로 — IT 의 긴 항목과 같은 모양.
    한 줄에 나란히 두면 라벨이 두 줄로 접혀 값과 어긋난다(09-20 사용자 지적). */
-/* 10-20 SSL 항목 — 질문(번호 · 영문 · 한글) 과 답(상자)을 나눠 한눈에 구분(APS 상세와 같은 모양) */
-.qa{padding:9px 0 10px;border-bottom:1px solid #f3f2f1}
-.qa:last-child{border-bottom:none}
-.qa-q{display:flex;gap:7px;align-items:flex-start;font-size:12px;line-height:1.45;color:#323130;font-weight:600}
-.qa-n{flex:0 0 18px;height:18px;margin-top:-1px;border-radius:9px;background:#e8f1fb;color:#0b5cad;font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
-.qa-ko{color:#8a8886;font-weight:400}
-.qa-a{margin:5px 0 0 25px;background:#f8f9fb;border:1px solid #edf0f4;border-radius:6px;padding:7px 11px;font-size:13px;line-height:1.55;color:#201f1e;white-space:pre-wrap;word-break:break-word}
-.qa-a.num{font-weight:700;font-variant-numeric:tabular-nums}
-.qa-a.empty{color:#a19f9d;background:#fff}
-.qa-sub{margin:5px 0 0 25px;font-size:11.5px;color:#605e5c;display:flex;gap:8px;flex-wrap:wrap}
-.qa-sub b{color:#323130;font-weight:600;font-variant-numeric:tabular-nums}
+/* 10-20 SSL 항목 — 기본 정보와 같은 「라벨 | 값」 줄. 라벨은 영문 아래 한글(작게 · 흐리게), 라벨 칸을 조금 넓혀 긴 영문이 덜 꺾이게 */
+.det-row.ssl .det-lbl{width:240px;padding-right:12px;line-height:1.4}
+.det-row.ssl .det-ko{display:block;font-size:11px;color:#a19f9d;margin-top:1px}
+.det-row.ssl .det-val{white-space:pre-wrap}
+.det-row.ssl .det-sub{display:block;font-size:11.5px;color:#8a8886;margin-top:2px}
 .det-full{padding:7px 0;border-bottom:.5px solid #edebe9}
 .det-full .det-lbl{display:block;width:auto;margin-bottom:3px;font-size:11px}
 .det-full .det-body{color:#323130;font-weight:400;font-size:13px;white-space:pre-wrap;word-break:break-word}
@@ -895,7 +889,7 @@ button[style*="display:none"]+.pdf-log-note,button[style*="display: none"]+.pdf-
     .det-lbl { width: 96px; }
     .det-val { min-width: 0; overflow-wrap: anywhere; }
     .det-full .det-lbl { width: auto; }
-    .qa-a, .qa-sub { margin-left: 0; }
+    .det-row.ssl .det-lbl { width: 120px; }
     .dl dt { flex-basis: 96px; }
     .appr-item > div:first-child { min-width: 0; overflow-wrap: anywhere; }
     .appr-item > span:last-child { flex: none; white-space: nowrap; }
@@ -3271,20 +3265,19 @@ function detailAllowed(f, rows) {
   return { ok: false, reason: _configLoaded ? '신청자 · 결재자 · 관리자 · IT 아님' : '설정 미확인 — 신청자 · 결재자 아님' };
 }
 function detailFieldRows(cat, f) {
-  // 10-20 질문 · 답 블록 — 번호 · 영문(굵게) · 한글(흐리게) / 답은 상자. 금액은 굵게 + 아래 줄에 KRW 환산 · 결재 구간
+  // 10-20 기본 정보와 같은 「라벨 | 값」 줄 — 라벨은 영문 + 아래 한글(작게). 금액은 값 아래 작은 줄에 KRW 환산 · 결재 구간
   const T = PROC_TYPES[cat];
-  const q = (n, fd) => '<div class="qa-q"><span class="qa-n">' + n + '</span><span><span class="qa-en">' + esc(fd.en) + '</span> <span class="qa-ko">(' + esc(fd.ko) + ')</span></span></div>';
-  const a = (v, cls) => { const e = v == null || String(v).trim() === ''; return '<div class="qa-a' + (cls ? ' ' + cls : '') + (e ? ' empty' : '') + '">' + esc(e ? '-' : v) + '</div>'; };
-  return T.fields.map((fd, i) => {
-    const n = i + 1;
+  const lbl = fd => '<span class="det-lbl">' + esc(fd.en) + ' <span class="det-ko">(' + esc(fd.ko) + ')</span></span>';
+  const val = v => esc(v == null || String(v).trim() === '' ? '-' : v);
+  return T.fields.map(fd => {
     if (fd.type === 'money') {
       const cur = String(f.Currency || 'KRW').toUpperCase();
-      return '<div class="qa">' + q(n, fd) + a(fmtAmt(f[fd.col], cur) + ' ' + cur, 'num') +
-        '<div class="qa-sub">' + (cur !== 'KRW' ? '<span>KRW 환산 <b>' + esc(fmtKrw(f.KRWAmount)) + ' KRW</b> (Exchange rate ' + esc(fmtRate(f.ExchangeRate)) + ' · ' + esc(isYes(f.ExchangeRateManual) ? '직접 입력' : dotDate(f.ExchangeRateDate) + ' ACC Voucher') + ')</span>' : '') +
-        '<span>결재 구간 (Approval Limit) <b>' + esc(f.ApprovalTier || '-') + '</b></span></div></div>';
+      return '<div class="det-row ssl">' + lbl(fd) + '<span class="det-val">' + esc(fmtAmt(f[fd.col], cur) + ' ' + cur) +
+        (cur !== 'KRW' ? '<span class="det-sub">KRW 환산 ' + esc(fmtKrw(f.KRWAmount)) + ' KRW (Exchange rate ' + esc(fmtRate(f.ExchangeRate)) + ' · ' + esc(isYes(f.ExchangeRateManual) ? '직접 입력' : dotDate(f.ExchangeRateDate) + ' ACC Voucher') + ')</span>' : '') +
+        '<span class="det-sub">결재 구간 (Approval Limit) ' + esc(f.ApprovalTier || '-') + '</span></span></div>';
     }
     const v = fd.type === 'textarea' ? spText(f[fd.col]) : fd.type === 'date' ? fmtDay(f[fd.col]) : f[fd.col];
-    return '<div class="qa">' + q(n, fd) + a(v) + '</div>';
+    return '<div class="det-row ssl">' + lbl(fd) + '<span class="det-val">' + val(v) + '</span></div>';
   }).join('');
 }
 async function openDetail(cat, reqId, opt) {
