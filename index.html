@@ -927,6 +927,108 @@ button[style*="display:none"]+.pdf-log-note,button[style*="display: none"]+.pdf-
   }
 }
 </style>
+<!-- ══ APS 점검(작업중) 게이트 — 10-21 공통(APS · 연동 시스템 모두 같은 코드) ══
+     설정 파일(system_config_final.xlsx) 의 B열(이름 칸)으로 시스템을 닫고 연다 — 키가 없거나 비어 있으면 늘 열림(설정을 못 읽어도 열림).
+       · <시스템>_OPEN : 그 시스템만      · APS_ALL_OPEN : APS 와 연동 시스템 전체
+       · 닫기 = N (no · off · close · 점검 · 작업중 도 같음). 뒤에 안내를 붙이면 화면에 보인다 — 예) N 10/21 18:00 완료 예정
+     닫혀 있어도 그 시스템 관리자(<접두어>_ADMIN_n · _IT · _SYSTEM_MGR)와 공통 관리자(ADMIN_SP_n)는 들어간다(위쪽 노란 띠로 표시).
+     앱은 설정을 읽은 직후 apsGateApply(cfg) 를 부른다. 시스템마다 다른 값은 APS_GATE_CFG(키 접두어 · 이름 · 관리자 접두어) 하나뿐. -->
+<style id="apsg-css">
+#apsg-ov{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;background:#f3f5f8;font-family:'Segoe UI','Malgun Gothic',sans-serif;color:#1e293b;overflow:auto;-webkit-font-smoothing:antialiased}
+#apsg-ov *{box-sizing:border-box}
+.apsg-band{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;height:30px;padding:0 20px;background:#0f2744;color:rgba(255,255,255,.78);font-size:11px}
+.apsg-band b{color:#fff;font-weight:700;letter-spacing:.3px}
+.apsg-band i{font-style:normal;color:rgba(255,255,255,.45);margin:0 6px}
+.apsg-band a{color:#fff;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.apsg-band a:hover{text-decoration:underline}
+.apsg-band svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.apsg-main{flex:1 0 auto;display:flex;align-items:center;justify-content:center;padding:40px 16px}
+.apsg-card{width:100%;max-width:520px;background:#fff;border:1px solid #e3e8ef;border-radius:14px;box-shadow:0 10px 30px rgba(15,39,68,.08);padding:36px 34px 28px;text-align:center}
+.apsg-ico{width:64px;height:64px;margin:0 auto 18px;border-radius:50%;background:linear-gradient(135deg,#eaf2fc,#dbe8f8);display:flex;align-items:center;justify-content:center;color:#0f2744;position:relative}
+.apsg-ico svg{width:30px;height:30px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.apsg-ico:after{content:'';position:absolute;right:4px;top:6px;width:11px;height:11px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 3px #fff}
+.apsg-kick{font-size:10.5px;font-weight:700;letter-spacing:1.6px;color:#64748b;text-transform:uppercase;margin-bottom:8px}
+.apsg-card h1{margin:0 0 10px;font-size:22px;font-weight:700;color:#0f2744;letter-spacing:-.2px}
+.apsg-sys{display:inline-block;margin-bottom:14px;padding:3px 12px;border-radius:999px;background:#eef2f7;color:#334155;font-size:12px;font-weight:600}
+.apsg-msg{margin:0 0 6px;font-size:14px;line-height:1.7;color:#475569}
+.apsg-en{margin:0 0 18px;font-size:12px;line-height:1.6;color:#94a3b8}
+.apsg-note{display:inline-flex;align-items:center;gap:7px;margin:0 0 18px;padding:7px 14px;border-radius:999px;background:#fff8e1;border:1px solid #ffe08a;color:#8a5a00;font-size:12.5px;font-weight:600;max-width:100%;overflow-wrap:anywhere}
+.apsg-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
+.apsg-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:132px;height:38px;padding:0 18px;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;text-decoration:none;border:1px solid #cbd5e1;background:#fff;color:#334155}
+.apsg-btn:hover{background:#f8fafc}
+.apsg-btn.pri{background:#0f2744;border-color:#0f2744;color:#fff}
+.apsg-btn.pri:hover{background:#18365c}
+.apsg-btn:focus{outline:none}.apsg-btn:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+.apsg-ct{border-top:1px solid #eef2f7;padding-top:14px;font-size:12px;color:#94a3b8}
+.apsg-ct a{color:#0078d4;text-decoration:none;font-weight:600}
+.apsg-ft{flex:none;text-align:center;padding:14px 16px 18px;font-size:11px;color:#a0aec0;line-height:1.6}
+#apsg-strip{position:fixed;left:0;right:0;bottom:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;gap:8px;padding:7px 14px;background:#fff8e1;border-top:1px solid #ffe08a;color:#7d5700;font:600 12px/1.4 'Segoe UI','Malgun Gothic',sans-serif;text-align:center;box-shadow:0 -2px 8px rgba(0,0,0,.06)}
+#apsg-strip button{border:0;background:none;color:#7d5700;font:inherit;cursor:pointer;padding:0 4px;opacity:.7}
+@media (max-width:480px){.apsg-card{padding:28px 20px 22px;border-radius:12px}.apsg-card h1{font-size:19px}.apsg-btn{flex:1 1 100%}.apsg-band{padding:0 12px}}
+</style>
+<script>
+(function () {
+  var CLOSED = /^(n|no|off|false|0|close|closed|점검|작업중)$/i;
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var rx = function (s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+  function get(cfg, key) { var lk = key.toLowerCase(); for (var k in cfg) if (k.toLowerCase() === lk) return cfg[k]; return null; }
+  // 닫힘이면 { note } — B열 첫 낱말이 닫기 낱말일 때만. 그 밖(빈 칸 · Y · 다른 글자)은 열림
+  function closed(v) { if (!v) return null; var s = String(v.name || '').replace(/[ 　]/g, ' ').trim(); var m = s.match(/^(\S+)\s*([\s\S]*)$/); if (!m || !CLOSED.test(m[1])) return null; return { note: m[2].trim() }; }
+  function mine() { try { var u = (typeof user !== 'undefined' && user) || null; return u ? [u.email, u.username].filter(Boolean).map(function (x) { return String(x).trim().toLowerCase(); }) : []; } catch (e) { return []; } }
+  function isAdmin(cfg, G) {
+    var me = mine(); if (!me.length) return null;   // 아직 로그인 정보가 없으면 판단 보류
+    var re = new RegExp('^(ADMIN_SP|(' + G.admin.map(rx).join('|') + ')_(ADMIN|IT|SYSTEM_MGR))(_\\d+)?$', 'i');
+    for (var k in cfg) if (re.test(k)) { var e = String((cfg[k] && cfg[k].email) || '').trim().toLowerCase(); if (e && me.indexOf(e) >= 0) return true; }
+    return false;
+  }
+  function contact(cfg, G) { var c = get(cfg, G.admin[0] + '_IT_CONTACT') || get(cfg, G.key + '_IT_CONTACT') || get(cfg, 'CONTACT_EMAIL'); var e = c && String(c.email || '').trim(); return /@/.test(e || '') ? e : ''; }
+  // 시스템 하나의 상태 — APS 결재함이 연동 시스템마다 부른다
+  window.apsGateClosed = function (cfg, key) { if (!cfg) return null; return closed(get(cfg, 'APS_ALL_OPEN')) || closed(get(cfg, key + '_OPEN')); };
+  function clear() { ['apsg-ov', 'apsg-strip'].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); }); document.documentElement.style.overflow = ''; }
+  function overlay(cfg, G, st) {
+    if (document.getElementById('apsg-ov')) return;
+    var mail = contact(cfg, G), aps = G.key === 'APS';
+    var d = document.createElement('div'); d.id = 'apsg-ov'; d.setAttribute('role', 'alertdialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-labelledby', 'apsg-t');
+    d.innerHTML =
+      '<div class="apsg-band"><span><b>STK APS</b><i>›</i><span>' + esc(G.name) + '</span></span>' +
+        (aps ? '' : '<a href="https://aps.startruckkorea.com/" target="_self"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>APS 바로가기</a>') + '</div>' +
+      '<div class="apsg-main"><div class="apsg-card">' +
+        '<div class="apsg-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3.6 17.4a1.4 1.4 0 0 0 2 2l5.7-5.7a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-.5-.5-2z"/></svg></div>' +
+        '<div class="apsg-kick">System Maintenance</div>' +
+        '<h1 id="apsg-t">시스템 작업 중입니다</h1>' +
+        '<div class="apsg-sys">' + esc(G.name) + '</div>' +
+        '<p class="apsg-msg">현재 시스템 작업 중으로 접근이 불가능합니다.<br>작업이 끝나면 바로 다시 이용하실 수 있습니다.</p>' +
+        '<p class="apsg-en">This system is temporarily unavailable due to maintenance.</p>' +
+        (st.note ? '<div class="apsg-note"><span aria-hidden="true">🕒</span>' + esc(st.note) + '</div>' : '') +
+        '<div class="apsg-btns"><button type="button" class="apsg-btn pri" onclick="location.reload()">다시 확인</button>' +
+          (aps ? '' : '<a class="apsg-btn" href="https://aps.startruckkorea.com/" target="_self">APS 결재함으로</a>') + '</div>' +
+        (mail ? '<div class="apsg-ct">문의 · IT <a href="mailto:' + esc(mail) + '">' + esc(mail) + '</a></div>' : '') +
+      '</div></div>' +
+      '<div class="apsg-ft">© ' + new Date().getFullYear() + ' Star Truck Korea · ' + esc(G.name) + '</div>';
+    document.body.appendChild(d); document.documentElement.style.overflow = 'hidden';
+  }
+  function strip(G, st) {
+    if (document.getElementById('apsg-strip')) return;
+    var s = document.createElement('div'); s.id = 'apsg-strip'; s.setAttribute('role', 'status');
+    s.innerHTML = '<span>🛠 작업 중 — 일반 사용자에게는 「시스템 작업 중」 화면이 보입니다. 관리자 계정이라 들어왔습니다.' + (st.note ? ' (' + esc(st.note) + ')' : '') + '</span><button type="button" aria-label="닫기" onclick="this.parentNode.remove()">✕</button>';
+    document.body.appendChild(s);
+  }
+  var _t = null;
+  window.apsGateApply = function (cfg) {
+    try {
+      var G = window.APS_GATE_CFG; if (!G || !cfg) return;
+      var st = window.apsGateClosed(cfg, G.key);
+      if (_t) { clearInterval(_t); _t = null; }
+      if (!st) { clear(); return; }
+      var ad = isAdmin(cfg, G);
+      if (ad === true) { var o = document.getElementById('apsg-ov'); if (o) o.remove(); document.documentElement.style.overflow = ''; strip(G, st); return; }
+      overlay(cfg, G, st);
+      if (ad === null) { var n = 0; _t = setInterval(function () { var a = isAdmin(cfg, G); if (a !== null || ++n > 30) { clearInterval(_t); _t = null; if (a === true) window.apsGateApply(cfg); } }, 500); }   // 로그인 정보가 늦게 오면 관리자인지 다시 본다
+    } catch (e) { try { console.warn('[APS gate]', e && e.message); } catch (_) {} }
+  };
+})();
+</script>
+<script>window.APS_GATE_CFG = {"key": "PROCUREMENT", "name": "Procurement", "admin": ["PROCUREMENT"]};   // 점검(작업중) 게이트 — 설정 키 PROCUREMENT_OPEN · APS_ALL_OPEN</script>
 </head>
 <body>
 
@@ -1859,7 +1961,7 @@ async function loadSystemConfig() {
   if (_sysConfig) return _sysConfig;
   try {
     const cfg = await fetchConfigFresh();
-    _sysConfig = cfg;
+    _sysConfig = cfg; try { if (window.apsGateApply) apsGateApply(cfg); } catch (e) {}   /* 10-21 점검(작업중) 게이트 */
     console.log('[Config] system_config_final.xlsx 로드:', Object.keys(cfg).length, '건');
     return cfg;
   } catch (e) {
