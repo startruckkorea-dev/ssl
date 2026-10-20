@@ -261,6 +261,34 @@ table.lst td.c-no{color:#a19f9d;font-size:.74rem}
 .lim-hist-list li{padding:3px 0;border-bottom:1px dotted #edebe9;overflow-wrap:anywhere;line-height:1.5}
 .lim-hist-list li:last-child{border-bottom:none}
 .lim-hist-list time{color:#8a8886}
+/* 10-20 다듬기 — 머리(제목 · SSL 꼬리표 · 구간 요약 덩어리), 행 한 줄(입력 · 칩 · 역할 글자를 나란히), 표 머리 배경 없앰 */
+.lim-card{padding:10px 14px 8px;max-width:900px}
+.lim-hd.lim-tog{display:flex;align-items:flex-start;gap:4px 10px;flex-wrap:nowrap;margin-bottom:0}
+.lim-card.open .lim-hd.lim-tog{margin-bottom:6px}
+.lim-chev{margin-top:2px}
+.lim-title{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:.86rem}
+.lim-tag{font-size:.62rem;font-weight:700;color:#0b5cad;background:#eef5fd;border:1px solid #cfe2f7;border-radius:8px;padding:0 6px;line-height:1.5}
+.lim-sum{display:flex;flex-wrap:wrap;align-items:center;gap:3px 0;padding-top:2px;font-size:.7rem;line-height:1.5}
+.lim-seg{white-space:nowrap;color:#605e5c}
+.lim-seg b{font-variant-numeric:tabular-nums}
+.lim-dot{font-style:normal;color:#c8c6c4;padding:0 6px}
+.lim-more{padding-top:2px}
+.lim-note{margin:0 0 6px;padding-left:18px}
+.lim-tbl th{background:none;padding:3px 8px 4px;font-size:.66rem;letter-spacing:.02em}
+.lim-tbl td{padding:4px 8px}
+.lim-tbl th:first-child,.lim-tbl td:first-child{width:240px}
+.lim-cell{gap:5px}
+.lim-cell input[type=text]{width:128px;height:26px;padding:2px 8px;font-size:.78rem}
+.lim-lt{width:128px;font-size:.78rem}
+.lim-lw{display:flex;align-items:center;flex-wrap:wrap;gap:3px 10px}
+.lim-lw .lim-chips{margin-bottom:0;gap:3px;flex:0 0 auto;min-width:290px}
+.lim-chip{height:20px;padding:0 8px;font-size:.66rem;gap:3px}
+.lim-lp{font-size:.7rem;color:#8a8886;flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lim-lw .lim-err{flex-basis:100%;margin-top:0}
+.lim-tbl tr.lim-r0 td{padding-top:5px;padding-bottom:5px}
+.lim-actions{margin-top:6px}
+.lim-btn{padding:4px 12px;font-size:.75rem}
+.lim-hist{margin-top:6px;padding-top:5px}
 .lim-hist-list .who{color:#323130}
 .lim-hist-list b{color:#323130;font-weight:600}
 .lim-h-empty{font-size:.72rem;color:#a19f9d;padding:4px 0}
@@ -283,6 +311,14 @@ table.lst td.c-no{color:#a19f9d;font-size:.74rem}
   .lim-tbl tbody tr:last-child{border-bottom:none}
   .lim-tbl td{border-bottom:none;padding:2px 4px}
   .lim-tbl td.lim-line{color:#605e5c;font-size:.74rem;padding-top:3px}
+  .lim-hd.lim-tog{flex-wrap:wrap}
+  .lim-sum{flex:1 1 100%;order:3;padding-left:16px}
+  .lim-note{padding-left:0}
+  .lim-lp{flex-basis:100%;white-space:normal}
+  .lim-lw .lim-chips{min-width:0;flex:1 1 100%}
+  .lim-lw .lim-chip{height:30px;padding:0 8px;font-size:.72rem}
+  .lim-sum{flex-direction:column;align-items:flex-start;gap:2px}
+  .lim-dot{display:none}
   .lim-chip{height:30px;padding:0 12px;font-size:.74rem}
   .lim-cell input[type=text]{flex:1 1 auto;min-width:0;width:auto;height:38px;font-size:.88rem}
   .lim-lt{width:auto;text-align:left;padding-right:0}
@@ -4095,10 +4131,11 @@ function renderLimitCard(force) {
   const histOpen = !!(document.getElementById('lim-hist') || {}).open;
   let open = false; try { open = localStorage.getItem('procu.limOpen') === '1'; } catch (e) {}
   card.classList.toggle('open', open); card.classList.toggle('closed', !open);
-  const sumTxt = T.limitEdit.map(e => '<b>' + fmtWon(L[e.k]) + '~</b> ' + esc(_limLines ? lineCodes(_limLines[e.k]) : '')).join(' · ');
+  // 10-20 요약은 구간마다 한 덩어리(줄바꿈은 덩어리 사이에서만) — 글자는 예전과 같다(「 · 」 구분)
+  const sumTxt = T.limitEdit.map(e => '<span class="lim-seg"><b>' + fmtWon(L[e.k]) + '~</b> ' + esc(_limLines ? lineCodes(_limLines[e.k]) : '') + '</span>').join('<i class="lim-dot"> · </i>');
   card.innerHTML =
     '<button type="button" class="lim-hd lim-tog" id="lim-tog" aria-expanded="' + open + '" aria-controls="lim-body" onclick="limToggleCard()">' +
-      '<span class="lim-chev" aria-hidden="true">›</span><span class="lim-title">⚙️ 결재 기준 금액 · ' + esc(T.prefix) + '</span>' +
+      '<span class="lim-chev" aria-hidden="true">›</span><span class="lim-title">결재 기준 금액<span class="lim-tag">' + esc(T.prefix) + '</span></span>' +
       '<span class="lim-sum" id="lim-sum">' + sumTxt + '</span><span class="lim-more" id="lim-more">' + (open ? '접기' : '자세히') + '</span></button>' +
     (psErr ? '<div class="lim-warn">⚠ 관리자 설정을 읽지 못해 저장할 수 없습니다 — 새로고침 후 다시 시도해 주세요. <span class="lim-warn-d">' + esc(psErr) + '</span></div>' : '') +
     (info.bad ? '<div class="lim-warn">⚠ 설정 값이 오름차순이 아니어서 기본값을 쓰고 있습니다' +
@@ -4113,10 +4150,10 @@ function renderLimitCard(force) {
           ' aria-describedby="lim-err-' + e.k + '" oninput="limOnInput()" onblur="limOnBlur(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();openLimitConfirm();}">' +
           '<span class="lim-up">이상</span>' + src(e.k) + '</div>' +
           '<div class="lim-was" id="lim-was-' + e.k + '"></div><div class="lim-err" id="lim-err-' + e.k + '" role="alert" style="display:none"></div></td>' +
-        '<td class="lim-line">' + (_limLines ? '<div class="lim-chips" role="group" aria-label="' + esc(e.label) + ' 구간 결재 라인 — 누르면 넣고 뺍니다"' + (info.src.lines === 'app' ? '' : ' title="기본 결재 라인"') + '>' +
+        '<td class="lim-line"><div class="lim-lw">' + (_limLines ? '<div class="lim-chips" role="group" aria-label="' + esc(e.label) + ' 구간 결재 라인 — 누르면 넣고 뺍니다"' + (info.src.lines === 'app' ? '' : ' title="기본 결재 라인"') + '>' +
           T.steps.map(st => '<button type="button" class="lim-chip" id="lim-chip-' + e.k + '-' + st.key + '" data-b="' + e.k + '" data-r="' + st.key + '" aria-pressed="false" title="' + esc(st.role) + '" onclick="limToggle(\'' + e.k + '\',\'' + st.key + '\')"><span class="n"></span>' + esc(st.key) + '</button>').join('') +
           '</div>' : '') + '<div class="lim-lp" id="lim-line-' + e.k + '"></div>' +
-          (_limLines ? '<div class="lim-err" id="lim-lerr-' + e.k + '" role="alert" style="display:none"></div>' : '') + '</td></tr>').join('') +
+          (_limLines ? '<div class="lim-err" id="lim-lerr-' + e.k + '" role="alert" style="display:none"></div>' : '') + '</div></td></tr>').join('') +
     '</tbody></table>' +
     '<div class="lim-actions"><span class="lim-msg" id="lim-msg" aria-live="polite"></span>' +
       '<button type="button" class="lim-btn" id="lim-reset" onclick="limResetInputs()">되돌리기</button>' +
@@ -4203,6 +4240,7 @@ function limOnInput() {
     const keys = st.lines ? st.lines[e.k] : T.approvalRule(Number(L2[e.k]), L2);
     const lp = document.getElementById('lim-line-' + e.k);
     lp.textContent = keys.length ? lineRoles(T, keys) : '—';
+    lp.title = keys.length ? lineRoles(T, keys) : '';
     if (st.lines) {
       T.steps.forEach(x => { const c = document.getElementById('lim-chip-' + e.k + '-' + x.key); if (!c) return; const i = keys.indexOf(x.key);
         c.setAttribute('aria-pressed', i >= 0 ? 'true' : 'false'); c.classList.toggle('on', i >= 0); c.querySelector('.n').textContent = i >= 0 ? String(i + 1) : ''; c.disabled = _limSaving; });
