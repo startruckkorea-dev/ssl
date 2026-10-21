@@ -793,7 +793,7 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .sslp .fn .rule{width:145pt;border-top:.75pt solid #000;margin-bottom:3pt}
 .sslp .fn sup{font-size:5.5pt}
 .sslp .ft{position:absolute;left:57pt;right:60pt;top:771pt;font-size:8pt;line-height:1.36}
-.sslp .ft .r{position:absolute;left:395pt;top:0}
+.sslp .ft .r{position:absolute;right:0;top:0}
 .sslp .over{position:absolute;right:60pt;top:48pt;font-size:6.5pt;color:#a4262c;font-weight:700;letter-spacing:.4pt}
 /* PDF 출력 단추 아래 안내(C-3, 10-16) — 「출력 이력은 Logging 시스템에 보관됩니다」.
    단추 바로 뒤 형제로 두어, 단추가 style.display='none'(또는 hidden)이면 안내도 같이 숨는다.
@@ -3874,7 +3874,7 @@ function sslPdfPages(f, rows, L) {
     return tr(r.lim, r.role, r.a, r.cls, span);
   }).join('') + '<tr class="endbar"><td colspan="6"></td></tr></tbody></table>';
   const fn = '<div class="fn"><div class="rule"></div><sup>1</sup> If a Blanket Order is created by NPM Procurement DTAG with a specific supplier, the single source letter should be used.<br>&nbsp;&nbsp;It is the responsibility of the originator of the requisition to meet the effective regulations.</div>';
-  const ft = '<div class="ft">NPM Procurement: Single Source Letter of Justification<span class="r">Valid as of:</span><br>04/2022</div>';
+  const ft = '<div class="ft">NPM Procurement: Single Source Letter of Justification<span class="r">Valid as of: 04/2022</span></div>';   // 10-22: 「Valid as of」 와 04/2022 를 한 줄로(떨어져 보이던 것)
   const over = (f.Status || '').trim() && (f.Status || '').trim() !== '승인완료' ? '<div class="over">' + esc(f.Title || '') + ' · ' + esc((f.Status || '').trim() === '대기' ? 'IN APPROVAL' : (f.Status || '').trim() === '반려' ? 'REJECTED' : (f.Status || '').trim() === '철회' ? 'WITHDRAWN' : f.Status) + '</div>'
     : '<div class="over" style="color:#107c10">' + esc(f.Title || '') + ' · APPROVED</div>';
   return { blocks, apv, head, body, fn, ft, over };
