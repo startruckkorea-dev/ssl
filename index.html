@@ -806,6 +806,7 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .pdf-log-note svg{flex:0 0 auto}
 .pdf-log-row>.pdf-log-note{flex:1 1 100%;justify-content:flex-end}
 button[style*="display:none"]+.pdf-log-note,button[style*="display: none"]+.pdf-log-note,button[hidden]+.pdf-log-note{display:none !important}
+input.rate-lock,input.rate-lock:read-only{background:#f3f2f1 !important;color:#605e5c !important;cursor:not-allowed}   /* 환율 고정(10-22) */
 </style>
 <style id="aps-mobile">
 /* APS 모바일(aps-mobile · ACC Others 10-09 · 10-10 2차 · 10-11 iOS-SELECT 와 같은 규칙) — 767px 이하 전용. 웹 화면 무변경.
@@ -2330,7 +2331,12 @@ function onMoneyChange(cat, why) {
     const v = parseFloat(String(rEl.value).replace(/,/g, '')) || 0;
     st.manual = !(st.auto && Math.abs(v - st.auto.rate) < 1e-9);
   }
+  // 10-22: ACC Voucher 환율이 있으면 그 값으로 고정(직접 수정 불가 · 회색). 환율 정보가 없을 때만 직접 입력을 연다
+  if (cur !== 'KRW' && st.auto) { st.manual = false; rEl.value = String(st.auto.rate); }
   rEl.disabled = cur === 'KRW';
+  rEl.readOnly = cur !== 'KRW' && !!st.auto;
+  rEl.classList.toggle('rate-lock', cur === 'KRW' || !!st.auto);
+  rEl.title = rEl.readOnly ? 'ACC Voucher 환율로 고정됩니다' : '';
   const m = moneyState(cat);
   document.getElementById(cat + '-krw').value = m.krw ? fmtKrw(m.krw) : '';
   const info = document.getElementById(cat + '-rate-info');
@@ -2340,7 +2346,7 @@ function onMoneyChange(cat, why) {
     else if (st.manual) h = '<span class="tag man">직접 수정</span><span>입력한 환율 ' + esc(fmtRate(m.rate)) + ' 로 계산합니다(공식 양식에 수동 환율로 표시).</span>' +
       (st.auto ? '<button type="button" class="lnk" onclick="onMoneyChange(\'' + cat + '\',\'reset\')">ACC Voucher 환율(' + esc(dotDate(st.auto.date)) + ' · ' + esc(fmtRate(st.auto.rate)) + ') 로 되돌리기</button>' : '');
     else if (st.auto) h = '<span class="tag auto">ACC Voucher 환율</span><span>' + esc(dotDate(st.auto.date)) + ' 기준 ' + esc(cur) + ' ' + esc(fmtRate(st.auto.rate)) +
-      (st.auto.today ? '' : ' (오늘 값 없음 → 직전 날짜)') + '. 환율 칸에서 직접 고칠 수 있습니다.</span>';
+      (st.auto.today ? '' : ' (직전 날짜)') + '</span>';   // 10-22: 짧게 — 환율은 고정
     else if (!PROC_RATES.loaded) h = '<span>환율 정보를 불러오는 중입니다…</span>';
     else h = '<span class="tag none">환율 없음</span><span>' + (PROC_RATES.failed ? '환율 파일을 읽지 못했습니다' : esc(cur) + ' 환율 정보가 없습니다') + ' — 환율을 직접 입력해 주세요.</span>';
     info.innerHTML = h;
