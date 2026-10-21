@@ -779,6 +779,7 @@ html, * { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 .sslp table.at td.who{font-weight:700;font-size:8.6pt}
 .sslp table.at td.sig{padding:2pt}
 .sslp table.at td.dt{font-size:7.6pt}
+.sslp table.at td.dt.rej{color:#c62828}
 .sslp table.at tr.ex td.lim{color:#6b5310}   /* 추가 결재자 줄(10-15) — 양식 구간 칸 대신 「Additional approval (Step N)」 */
 .sslp table.at tr.endbar td{height:3.5pt;padding:0;background:#bfbfbf;border-left:none;border-right:none}
 .sslp .stamp{display:inline-block;border:1.1px solid #0078d4;border-radius:4px;padding:2pt 5pt;line-height:1.3;font-size:6.6pt;color:#333;text-align:center;white-space:nowrap}
@@ -3853,11 +3854,11 @@ function sslPdfPages(f, rows, L) {
   extras.sort((x, y) => (Number(x.ApprovalOrder) || 0) - (Number(y.ApprovalOrder) || 0));
   // 10-20: 같은 구간 줄은 「Approval Limit」 칸을 하나로 합친다(SMR 결재표처럼) — span 0 이면 위 줄에 합쳐져 칸을 두지 않는다
   const tr = (limit, role, a, cls, span) => {
-    const ok = a && (a.Status || '').trim() === '승인';
+    const ok = a && (a.Status || '').trim() === '승인', rj = a && (a.Status || '').trim() === '반려';
     const limTd = span === 0 ? '' : '<td class="lim"' + (span > 1 ? ' rowspan="' + span + '"' : '') + '>' + limit + '</td>';
     return '<tr class="' + (cls || '') + '">' + limTd + '<td class="lim">' + role + '</td>' +
       '<td class="who">' + (a ? esc(a.ApproverName || '') : '') + '</td><td class="who">' + (a ? esc(a.ApproverDept || '') : '') + '</td>' +
-      '<td class="sig">' + (a ? sslStampHtml(a) : '') + '</td><td class="dt">' + (ok && a.ApprovalDate ? esc(dotDate(fmtDate(a.ApprovalDate))) : '') + '</td></tr>';
+      '<td class="sig">' + (a ? sslStampHtml(a) : '') + '</td><td class="dt' + (rj ? ' rej' : '') + '">' + ((ok || rj) && a.ApprovalDate ? esc(dotDate(fmtDate(a.ApprovalDate))) : '') + '</td></tr>';   // 10-22: 반려도 처리일을 적는다(빨간 글자)
   };
   // v13: 그 신청의 결재 라인 어느 구간에도 없는 역할은 줄을 두지 않는다. 추가 결재자는 결재표 첫 줄 바로 아래(결재선 1차 다음과 같은 자리) · 그 구간 칸에 합친다
   const shown = T.steps.map(st => ({ st, lim: T.limitCell(st.key, L) })).filter(x => x.lim || byKey[x.st.key]);
