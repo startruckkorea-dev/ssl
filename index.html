@@ -1409,9 +1409,11 @@ const PROC_TYPES = {
     steps: [
       // 역할 글자에 직급 코드(L5 · L4)를 붙이지 않는다(v17 · 사용자 요청) — 예전 결재행의 「(L5)」 · 「(L4)」 는 roleNoGrade 가 화면에서 뗀다
       { key: 'TL',  role: 'Team Leader', src: 'flex-tl', slot: 1, ko: '팀장' },
-      { key: 'MC',  role: 'RBO MC',      src: 'flex-dh', slot: 2, ko: '부서장' },
+      // 11-02 표기 RBO MC → MC (새 결재행부터 저장값도 MC). 예전 결재행의 「RBO MC」 는 roleNoGrade 가 화면에서 MC 로 바꾼다
+      { key: 'MC',  role: 'MC',          src: 'flex-dh', slot: 2, ko: '부서장' },
       // Controlling manager(10-20 · Procurement 담당 요청 메일 · SMR 결재표의 「Controller」) — 설정 키 PROCUREMENT_CONTROLLING
-      { key: 'CTRL', role: 'Controller', src: 'cfg', cfgKey: 'PROCUREMENT_CONTROLLING', ko: 'Controlling manager' },
+      // 11-02 표기 Controller → Controlling Manager (새 결재행부터 저장값도). 예전 「Controller」 는 roleNoGrade 가 화면에서 바꾼다
+      { key: 'CTRL', role: 'Controlling Manager', src: 'cfg', cfgKey: 'PROCUREMENT_CONTROLLING', ko: 'Controlling Manager' },
       { key: 'CFO', role: 'CFO',         src: 'cfg', cfgKey: 'PROCUREMENT_CFO' },
       { key: 'RD',  role: 'RD',               src: 'cfg', cfgKey: 'PROCUREMENT_RD' },
     ],
@@ -1624,7 +1626,8 @@ function _aacRoleParse(role){
   return { base: m[1].trim(), name: nm || em, email: nm ? em : '' };
 }
 // 예전 결재행 역할 글자의 직급 코드 「 (L5)」 · 「 (L4)」 를 뗀다(v17 — 화면 · PDF · Excel 에 L4 · L5 를 보이지 않는다. 저장값은 그대로)
-function roleNoGrade(role){ return String(role == null ? '' : role).replace(/\s*\(L\d\)/g, ''); }
+// 11-02 예전 결재행의 역할 이름도 지금 표기로(RBO MC → MC · Controller → Controlling Manager) — 상세 · Excel · 결재선 표 맞춤이 모두 이 함수를 거친다
+function roleNoGrade(role){ return String(role == null ? '' : role).replace(/\s*\(L\d\)/g, '').replace(/\bRBO MC\b/g, 'MC').replace(/\bController\b/g, 'Controlling Manager'); }
 function aacRoleBase(role){
   const p = _aacRoleParse(role);
   return roleNoGrade(p ? p.base : String(role == null ? '' : role));
@@ -3504,7 +3507,7 @@ async function processApproval() {
     _aoLogged = true;
     const f = (_aoCur && _aoCur.fields) || {}, q = (_aoReq && _aoReq.fields) || (_detail && _detail.fields) || {}, dg = aacDelegatorOf(f.ApproverEmail);
     aoAudit(cat, what || (action === '승인' ? '결재 승인' : '결재 반려'), { 신청번호: q.Title || '', id: String(reqId), 제목: String(q.RequestTitle || '').slice(0, 200), 결과: result,
-      차수: f.ApprovalOrder == null ? '' : f.ApprovalOrder, 역할: String(f.ApproverRole || ''), 결재자: f.ApproverEmail || '',
+      차수: f.ApprovalOrder == null ? '' : f.ApprovalOrder, 역할: roleNoGrade(String(f.ApproverRole || '')), 결재자: f.ApproverEmail || '',
       대리: dg ? '예 — ' + (f.ApproverName || dg.name || f.ApproverEmail) + ' 님 대신' : '', 의견: aoLen(comment), 목록: L.apr, 결재행: String(apprId) });
   };
   try {
