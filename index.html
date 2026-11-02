@@ -2033,7 +2033,9 @@ function deptOf(email) { const e = empByEmail(email); return e ? e.dept : ''; }
 
 /* ── 환율(acc_voucher_exchange.xlsx) — ACC Voucher 의 applyTodayExchangeRate 와 같은 파일 · 같은 해석 ──
    1행: [ (빈 칸), 'CNY', 'EUR', 'JPY', 'SGD', 'USD' … ], 2행부터 A열 날짜(엑셀 날짜 · 글자) + 통화별 환율(1 단위 = KRW).
-   통화마다 오늘(KST) 값이 0 보다 크면 그 값, 아니면 오늘 이전 가장 가까운 날짜의 값(ACC Voucher 와 같은 「직전 날짜」 규칙).
+   통화마다 오늘(KST) 값이 0 보다 크면 그 값을 고정해 쓴다. 11-02: 오늘 값이 없으면 직전 날짜 값을 쓰지 않고 「오늘 기준 환율 정보가 없습니다」 로
+   알리고 직접 입력을 연다(ACC Voucher · CTR PR 과 같은 규칙 — 예전에는 11-02 에 10-31 값을 「직전 날짜」 로 고정해 썼다).
+   직전 날짜 값(basisRateFor)은 보이지 않는 결재 기준으로만 쓴다 — 결재선 · 최소 금액 판정은 입력 환율 환산액과 기준 환산액 중 큰 쪽(moneyState.tierKrw).
    못 읽거나 값이 없으면 환율 칸을 비워 두고 직접 입력하게 한다(직접 수정으로 표시 · 저장). */
 let PROC_RATES = { loaded: false, failed: false, currencies: [], rows: [] };
 async function loadExchange() {
@@ -2071,8 +2073,16 @@ function rateFor(cur) {
   cur = String(cur || '').toUpperCase();
   if (cur === 'KRW') return { rate: 1, date: kstToday() };
   const today = kstToday();
-  const cand = PROC_RATES.rows.filter(r => r.currency === cur && r.rate > 0 && r.date <= today).sort((a, b) => a.date < b.date ? 1 : -1);
-  return cand[0] ? { rate: cand[0].rate, date: cand[0].date, today: cand[0].date === today } : null;
+  const cand = PROC_RATES.rows.filter(r => r.currency === cur && r.rate > 0 && r.date === today);   // 11-02: 오늘 값만
+  return cand[0] ? { rate: cand[0].rate, date: cand[0].date, today: true } : null;
+}
+// 11-02: 오늘 값이 없을 때 결재 판정에만 쓰는 기준 — 오늘 이전 가장 가까운 날짜의 0 이 아닌 값(화면에 고정 · 기입하지 않음)
+function basisRateFor(cur) {
+  cur = String(cur || '').toUpperCase();
+  if (cur === 'KRW') return null;
+  const today = kstToday();
+  const cand = PROC_RATES.rows.filter(r => r.currency === cur && r.rate > 0 && r.date < today).sort((a, b) => a.date < b.date ? 1 : -1);
+  return cand[0] ? { rate: cand[0].rate, date: cand[0].date } : null;
 }
 /* ── 추천 공급업체 — BP Master 검색(ACC Voucher 「BP 검색」 과 같은 파일 · 같은 검색) ──────────────────
    파일: STK-DB 문서 루트의 BP-Master_목록_20260930_1756.xlsx(없으면 루트의 BP-Master_목록*.xlsx 중 이름이 가장 큰 것) — ACC Others BP Master 가 관리하고
@@ -2314,14 +2324,17 @@ function moneyState(cat) {
   const rate = cur === 'KRW' ? 1 : (parseFloat(String(val(cat + '-rate')).replace(/,/g, '')) || 0);
   const st = _money[cat];
   const krw = cur === 'KRW' ? roundKrw(amt) : (rate > 0 ? roundKrw(amt * rate) : 0);
-  return { cur, amt, rate, krw, manual: cur !== 'KRW' && !!st.manual, date: cur === 'KRW' ? '' : (st.manual ? kstToday() : (st.auto && st.auto.date) || '') };
+  // 11-02: 오늘 ACC Voucher 환율이 없어 직접 입력할 때 — 결재선 · 최소 금액 판정은 입력 환산액과 직전 기준 환산액 중 큰 쪽(환율을 낮춰 결재 단계가 빠지지 않게)
+  const basis = cur !== 'KRW' && !st.auto ? basisRateFor(cur) : null;
+  const tierKrw = basis && amt > 0 ? Math.max(krw, roundKrw(amt * basis.rate)) : krw;
+  return { cur, amt, rate, krw, tierKrw, basis, manual: cur !== 'KRW' && !!st.manual, date: cur === 'KRW' ? '' : (st.manual ? kstToday() : (st.auto && st.auto.date) || '') };
 }
 function onMoneyChange(cat, why) {
   const cur = (val(cat + '-cur') || 'KRW').toUpperCase();
   const rEl = document.getElementById(cat + '-rate'); if (!rEl) return;
   const st = _money[cat];
   if (why === 'cur' || why === 'rates' || why === 'reset') {
-    // 통화를 바꾸거나 환율 파일을 다 읽으면 오늘(없으면 직전) 환율로 다시 채운다 — 직접 고친 값은 통화가 그대로일 때(파일 로드)만 둔다
+    // 통화를 바꾸거나 환율 파일을 다 읽으면 오늘 환율로 다시 채운다(11-02: 오늘 값이 없으면 빈칸 — 직접 입력) — 직접 고친 값은 통화가 그대로일 때(파일 로드)만 둔다
     if (why !== 'rates' || !st.manual) {
       st.auto = rateFor(cur); st.manual = false;
       rEl.value = cur === 'KRW' ? '1' : (st.auto ? String(st.auto.rate) : '');
@@ -2346,9 +2359,11 @@ function onMoneyChange(cat, why) {
     else if (st.manual) h = '<span class="tag man">직접 수정</span><span>입력한 환율 ' + esc(fmtRate(m.rate)) + ' 로 계산합니다(공식 양식에 수동 환율로 표시).</span>' +
       (st.auto ? '<button type="button" class="lnk" onclick="onMoneyChange(\'' + cat + '\',\'reset\')">ACC Voucher 환율(' + esc(dotDate(st.auto.date)) + ' · ' + esc(fmtRate(st.auto.rate)) + ') 로 되돌리기</button>' : '');
     else if (st.auto) h = '<span class="tag auto">ACC Voucher 환율</span><span>' + esc(dotDate(st.auto.date)) + ' 기준 ' + esc(cur) + ' ' + esc(fmtRate(st.auto.rate)) +
-      (st.auto.today ? '' : ' (직전 날짜)') + '</span>';   // 10-22: 짧게 — 환율은 고정
+      '</span>';   // 10-22: 짧게 — 환율은 고정(11-02: 오늘 값만)
     else if (!PROC_RATES.loaded) h = '<span>환율 정보를 불러오는 중입니다…</span>';
-    else h = '<span class="tag none">환율 없음</span><span>' + (PROC_RATES.failed ? '환율 파일을 읽지 못했습니다' : esc(cur) + ' 환율 정보가 없습니다') + ' — 환율을 직접 입력해 주세요.</span>';
+    else h = '<span class="tag none">환율 없음</span><span>' + (PROC_RATES.failed ? '환율 파일을 읽지 못했습니다' : esc(dotDate(kstToday())) + ' 기준 ' + esc(cur) + ' 환율 정보가 없습니다') + ' — BU Admin 확인 후 환율을 직접 입력해 주세요.</span>';
+    // 11-02: 직접 입력 환율이 직전 기준 환율보다 낮으면 결재선은 기준 환산액으로 — 왜 단계가 늘었는지 바로 알 수 있게
+    if (cur !== 'KRW' && m.basis && m.rate > 0 && m.tierKrw > m.krw) h += '<span class="tag man">결재 기준</span><span>입력 환율이 직전 기준 환율(' + esc(dotDate(m.basis.date)) + ' · ' + esc(fmtRate(m.basis.rate)) + ')보다 낮아 결재선은 기준 환율 환산액(≈ KRW ' + esc(fmtKrw(m.tierKrw)) + ')으로 정합니다.</span>';
     info.innerHTML = h;
   }
   renderApprLine(cat);
@@ -2374,7 +2389,7 @@ function belowMinMsg(cat) {
 // Submit 버튼 — 최소 금액 미만이면 회색 · 누를 수 없음 · 사유 툴팁(상신 중에는 그대로 비활성)
 function syncSubmit(cat) {
   const btn = document.getElementById(cat + '-submit'); if (!btn) return;
-  const low = belowMin(cat, moneyState(cat).krw);
+  const low = belowMin(cat, moneyState(cat).tierKrw);
   btn.disabled = _submitting || low;
   btn.classList.toggle('is-blocked', low);
   if (low) btn.title = belowMinMsg(cat) + ' 상신할 수 없습니다.'; else btn.removeAttribute('title');
@@ -2390,8 +2405,8 @@ function apprLineHeadHtml(T, krw, L) {
 function renderApprLine(cat) {
   const T = PROC_TYPES[cat], L = limitsOf(cat);
   const _im = document.getElementById(cat + '-intro-min'); if (_im) _im.textContent = introMinText(cat, L);   // 작성 안내의 최소 금액(관리자 저장 · 상신 직전 다시 읽기 뒤에도 곧바로)
-  const m = moneyState(cat), low = belowMin(cat, m.krw);
-  const steps = low ? [] : stepsFor(cat, m.krw), keys = steps.map(s => s.key);
+  const m = moneyState(cat), low = belowMin(cat, m.tierKrw);
+  const steps = low ? [] : stepsFor(cat, m.tierKrw), keys = steps.map(s => s.key);
   // 최소 금액 미만이면 추가 결재자 칸 · 삽입선 · 안내를 숨긴다 — _extra 는 그대로 두어 금액을 올리면 되살아난다
   const ex = low ? [] : (_extra[cat] || []), nEx = ex.length;
   const exArea = document.getElementById(cat + '-extra-area'); if (exArea) exArea.style.display = low ? 'none' : '';
@@ -2402,7 +2417,7 @@ function renderApprLine(cat) {
   const pv = document.getElementById(cat + '-line-preview');
   if (pv) {
     pv.classList.toggle('is-none', low);
-    pv.innerHTML = apprLineHeadHtml(T, m.krw, L) + (low
+    pv.innerHTML = apprLineHeadHtml(T, m.tierKrw, L) + (low
       ? '<div class="appr-line-none"><span class="appr-none-pill">결재 불필요</span><span>' + esc(belowMinMsg(cat)) + '</span></div>'
       : '<div class="appr-line-steps">' + line.map((st, i) => '<span class="line-step"><span class="line-step-badge' + st.cls + '">' + (i + 1) + '차</span><span class="line-step-label">' + st.label + '</span>' +
           (i < line.length - 1 ? '<span class="line-arrow">→</span>' : '') + '</span>').join('') + '</div>' +
@@ -2522,7 +2537,7 @@ function exTeam(cat, uid) {
 }
 // 지금 결재선의 고정 결재자(금액 기준 단계) — 이메일 · 역할
 function _fixedApprovers(cat) {
-  return stepsFor(cat, moneyState(cat).krw).map(st => {
+  return stepsFor(cat, moneyState(cat).tierKrw).map(st => {
     const email = st.src === 'cfg' ? ((FIXED[st.cfgKey] || {}).email || '') : val(cat + '-a' + st.slot + '-email');
     return { email: String(email || '').trim().toLowerCase(), role: st.role };
   }).filter(a => a.email);
@@ -3031,8 +3046,8 @@ function buildApprovers(cat) {
   const m = moneyState(cat);
   // 최소 금액 미만 · 금액 없음은 결재선을 만들지 않는다(저장 경로 방어 — 결재행이 생기지 않게)
   if (!(m.krw > 0)) throw new Error('금액(KRW 환산)이 없어 결재선을 정할 수 없습니다.');
-  if (belowMin(cat, m.krw)) throw new Error(belowMinMsg(cat) + '\n상신할 수 없습니다.');
-  const steps = stepsFor(cat, m.krw);
+  if (belowMin(cat, m.tierKrw)) throw new Error(belowMinMsg(cat) + '\n상신할 수 없습니다.');
+  const steps = stepsFor(cat, m.tierKrw);
   if (!steps.length) throw new Error('이 금액에 맞는 결재선이 없어 상신할 수 없습니다.');
   applyFlexApprovers();
   const out = [], bad = [], cfgMiss = [];
@@ -3075,7 +3090,7 @@ async function submitForm(cat) {
     return;
   }
   // 작성 대상 최소 금액 미만 — 버튼을 막아 두지만 Enter · 개발자 도구로 눌러도 여기서 한 번 더 막는다(10-16)
-  if (belowMin(cat, moneyState(cat).krw)) { alert(belowMinMsg(cat) + '\n상신할 수 없습니다.'); syncSubmit(cat); return; }
+  if (belowMin(cat, moneyState(cat).tierKrw)) { alert(belowMinMsg(cat) + '\n상신할 수 없습니다.'); syncSubmit(cat); return; }
   const miss = validate(cat);
   if (miss.length) { alert('다음 항목을 확인해 주세요.\n\n· ' + miss.join('\n· ')); return; }
   let approvers;
@@ -3093,7 +3108,7 @@ async function submitForm(cat) {
     T.fields.forEach(fd => {
       if (fd.type === 'money') {
         Object.assign(fields, { [fd.col]: m.cur === 'KRW' ? roundKrw(m.amt) : round2(m.amt), Currency: m.cur, ExchangeRate: m.rate, ExchangeRateDate: m.date || '',
-          ExchangeRateManual: !!m.manual, KRWAmount: m.krw, ApprovalTier: T.tierLabel(m.krw, L) });
+          ExchangeRateManual: !!m.manual, KRWAmount: m.krw, ApprovalTier: T.tierLabel(m.tierKrw, L) });
       } else if (fd.type === 'date') {
         /* 10-15: 목록 열이 「날짜 및 시간」 이어도 날짜가 하루 밀리지 않게 정오(UTC)로 저장한다.
            날짜만 보내면 사이트 표준 시간대로 자정 해석돼 UTC 로 전날이 될 수 있다. 읽을 때는 앞 10자(날짜)만 쓴다. */
