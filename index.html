@@ -151,14 +151,24 @@ tbody tr:hover{background:#f8f9fb}
 /* 목록 세 표(내 신청 · 결재함 · 관리자) — 10-06: 열 폭을 자동에 맡겨 좁아지면 Title(DEV-2026-10-06_ID-4) · 발생일 · 신청일이 두 줄로 꺾였다.
    GW · IT 처럼 폭은 머리글이 정하고(table-layout fixed) 모든 칸은 한 줄 — 넘치면 말줄임, 전체는 마우스를 올리면 보인다.
    남는 폭은 「요청 제목」 이 받는다. 화면이 좁으면 표 안에서 가로 스크롤(최소 폭). */
-table.lst{table-layout:fixed;min-width:1240px}   /* 고정 열 합(최대 CCL 결재함 · 관리자 ≈1040) + 요청 제목 최소 ≈200 */
+table.lst{table-layout:fixed;min-width:1060px}   /* 고정 열 합(결재함 · 관리자 844) + 요청 제목 최소 ≈216 */
 table.lst th{white-space:nowrap}
 table.lst td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 11-04: 글자 크기 · 행 간격을 BP · GW 목록과 맞춘다 — 본문 .72rem · 머리 .68rem · 한 줄 18px(칸 위아래 4px).
+   상태 알약 · Withdraw 버튼도 18px 로 맞춰 대기 행만 높아지지 않게 한다. */
+table.lst{font-size:.72rem}
+table.lst th{font-size:.68rem;padding:7px 8px;line-height:16px}
+table.lst td{padding:4px 8px;line-height:18px}
+table.lst .st{font-size:.64rem;line-height:14px;padding:2px 8px;vertical-align:top}
+table.lst td > button{vertical-align:top}   /* 알약 · 단추를 글자 기준선에 맞추면 줄 상자가 몇 px 커져 행이 32px 로 늘어났다 — 줄 맨 위에 붙인다(둘 다 18px) */
+table.lst th .th-sub{display:block;font-size:.88em;line-height:12px;color:#605e5c;font-weight:400}   /* GW 「Total Amount (VAT Excluded)」 머리와 같은 모양 */
+table.lst td.c-amt{font-variant-numeric:tabular-nums}
+table.lst th.c-amt,table.lst td.c-amt{padding-right:14px}
 table.lst td.empty{white-space:normal}   /* 「불러오기 실패: …」 안내는 접지 않는다 */
 table.lst td > span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 table.lst td > span.st{display:inline-block}
 table.lst td > button{max-width:100%}
-table.lst td.c-no{color:#a19f9d;font-size:.74rem}
+table.lst td.c-no{color:#a19f9d;font-size:.68rem}
 .c-rtit{max-width:320px}
 .c-pol{max-width:180px;color:#605e5c}
 /* 적용 기간은 자르지 않는다 — 시작일·종료일이 잘리면 목록만 보고는 알 수 없다. */
@@ -1479,9 +1489,10 @@ const PROC_TYPES = {
       return later != null ? '≥ ' + w(L[b[i]]) + ' KRW &amp;<br>&lt; ' + w(L[b[later]]) + ' KRW' : '≥ ' + w(L[b[i]]) + ' KRW';
     },
     listCols: [
-      { label: '공급업체', w: '190px', cell: f => '<span title="' + esc(f.RecommendedSupplier || '') + '">' + esc(f.RecommendedSupplier || '-') + '</span>' },
-      { label: '금액', w: '150px', align: 'right', cell: f => '<span title="' + esc(fmtKrwNote(f)) + '">' + esc(fmtAmt(f.TotalVolume, f.Currency) + ' ' + (f.Currency || '')) + '</span>' },
-      { label: 'KRW 환산', w: '130px', align: 'right', cell: f => esc(fmtKrw(f.KRWAmount)) },
+      { label: '공급업체', w: '170px', cell: f => '<span title="' + esc(f.RecommendedSupplier || '') + '">' + esc(f.RecommendedSupplier || '-') + '</span>' },
+      /* 11-04: 「금액」 · 「KRW 환산」 두 열을 GW 처럼 「Total Amount (VAT Excluded)」 한 열(KRW 기준)로. 신청 통화 금액 · 환율은 마우스를 올리면 보인다. */
+      { label: 'Total Amount', sub: '(VAT Excluded)', w: '112px', align: 'right', cls: 'c-amt',
+        cell: f => '<span title="' + esc(amtTip(f)) + '">' + esc(fmtKrw(krwOf(f))) + '</span>' },
     ],
     listFields: 'Title,RequesterEmail,RequesterName,RequestTitle,RecommendedSupplier,TotalVolume,Currency,ExchangeRate,ExchangeRateDate,ExchangeRateManual,KRWAmount,Status,RequestDate',
     pdf: (f, rows, L) => sslPdfPages(f, rows, L),
@@ -1741,6 +1752,17 @@ function fmtKrwNote(f) {
   return isYes(f.ExchangeRateManual)
     ? krw + ' – Calculated with manually entered exchange rate ' + fmtRate(f.ExchangeRate) + ' (' + dotDate(f.ExchangeRateDate) + ')'
     : krw + ' – Calculated on ' + dotDate(f.ExchangeRateDate) + ' Exchange rate from ACC Voucher';
+}
+/* 목록 「Total Amount」 — KRW 기준 금액(KRWAmount). 원화 신청인데 KRWAmount 가 비어 있는 옛 행은 TotalVolume 을 쓴다. */
+function krwOf(f) {
+  const blank = f.KRWAmount === '' || f.KRWAmount == null;
+  return blank && String(f.Currency || 'KRW').toUpperCase() === 'KRW' ? f.TotalVolume : f.KRWAmount;
+}
+/* 그 칸에 마우스를 올렸을 때 — 원화: 「1,234,000 KRW」 · 외화: 신청 통화 금액 + 환산 설명(fmtKrwNote) */
+function amtTip(f) {
+  const cur = String(f.Currency || '').toUpperCase();
+  if (!cur || cur === 'KRW') return fmtKrw(krwOf(f)) + ' KRW (VAT Excluded)';
+  return fmtAmt(f.TotalVolume, f.Currency) + ' ' + cur + ' (VAT Excluded)\n' + fmtKrwNote(f);
 }
 /* 완료·오류 알림 — IT Ticket 과 같은 팝업. alert() 대신 쓴다. */
 function showAlert(title, sub = '', icon = '✅') {
@@ -3298,25 +3320,27 @@ async function detectStuck(cat, items) {
 
 /* ── 목록 열 — 공통(번호 · (신청자) · Title · 요청 제목) + 항목 정의의 listCols + 상태 · 신청일 (+ 내 신청의 Withdraw) ── */
 function listCols(cat, kind) {
-  const num   = { label: '번호',  w: '52px',  cls: 'c-no', cell: (f, it) => it.no };
-  const who   = { label: '신청자', w: '190px', cell: (f) => '<span title="' + esc(f.RequesterEmail || '') + '">' + esc(f.RequesterEmail || '') + '</span>' };
-  const title = { label: 'Title', w: '178px', cell: (f) => '<span style="color:#0078d4;font-weight:600" title="' + esc(f.Title || '') + '">' + esc(f.Title || '') + '</span>' };
+  /* 11-04: 글자를 줄인 만큼 고정 열을 좁혀 「요청 제목」 이 남는 폭을 더 받는다 */
+  const num   = { label: '번호',  w: '44px',  cls: 'c-no', cell: (f, it) => it.no };
+  const who   = { label: '신청자', w: '170px', cell: (f) => '<span title="' + esc(f.RequesterEmail || '') + '">' + esc(f.RequesterEmail || '') + '</span>' };
+  const title = { label: 'Title', w: '156px', cell: (f) => '<span style="color:#0078d4;font-weight:600" title="' + esc(f.Title || '') + '">' + esc(f.Title || '') + '</span>' };
   const rtit  = { label: '요청 제목', cell: (f) => '<span class="c-rtit" title="' + esc(f.RequestTitle || '') + '">' + esc(f.RequestTitle || '-') + '</span>' };
-  const stat  = { label: '상태',  w: '86px',  cell: (f) => '<span class="st ' + stClass(f.Status) + '">' + esc(f.Status || '') + '</span>' };
-  const rdate = { label: '신청일', w: '132px', cell: (f) => fmtDate(f.RequestDate) };
+  const stat  = { label: '상태',  w: '76px',  cell: (f) => '<span class="st ' + stClass(f.Status) + '">' + esc(f.Status || '') + '</span>' };
+  const rdate = { label: '신청일', w: '116px', cell: (f) => fmtDate(f.RequestDate) };
   const cols = [num];
   if (kind === 'adm' || kind === 'apr') cols.push(who);
   cols.push(title, rtit, ...PROC_TYPES[cat].listCols, stat, rdate);
-  if (kind === 'my') cols.push({ label: '', w: '96px', cell: (f, it) =>
+  if (kind === 'my') cols.push({ label: '', w: '88px', cell: (f, it) =>
     (f.Status || '').trim() === '대기'
-      ? '<button onclick="event.stopPropagation();withdrawRequest(\'' + cat + '\',' + it.id + ')" style="background:#ef4444;color:#fff;border:none;border-radius:4px;padding:2px 12px;font-size:.75rem;line-height:16px;cursor:pointer;font-family:inherit;white-space:nowrap">Withdraw</button>' : '' });
+      ? '<button onclick="event.stopPropagation();withdrawRequest(\'' + cat + '\',' + it.id + ')" style="background:#ef4444;color:#fff;border:none;border-radius:4px;padding:2px 10px;font-size:.68rem;line-height:14px;cursor:pointer;font-family:inherit;white-space:nowrap">Withdraw</button>' : '' });
   return cols;
 }
 function renderHead(key, cat, kind) {
   const el = document.getElementById(key + '-head');
   if (!el) return;
   el.innerHTML = '<tr>' + listCols(cat, kind).map(c =>
-    '<th style="' + (c.w ? 'width:' + c.w + (c.align === 'right' ? ';text-align:right' : '') : '') + '">' + esc(c.label) + '</th>').join('') + '</tr>';
+    '<th' + (c.cls ? ' class="' + c.cls + '"' : '') + ' style="' + (c.w ? 'width:' + c.w + (c.align === 'right' ? ';text-align:right' : '') : '') + '">' + esc(c.label) +
+    (c.sub ? '<span class="th-sub">' + esc(c.sub) + '</span>' : '') + '</th>').join('') + '</tr>';
 }
 function rowHtml(cat, kind, it, x, pos, total) {
   const f = (x && x.req) ? x.req.fields : it.fields;
