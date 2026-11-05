@@ -4993,5 +4993,60 @@ window.loadAdmin = apsDynWrap(loadAdmin, '데이터 불러오는 중');
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', draw); else draw();
 })();
 </script>
+<style id="aps-badge-col">
+/* 배지 열 가운데 맞춤(11-06) — 상태 · 유형 · 우선순위처럼 칸 안이 배지 하나뿐인 열은 머리글과 칸을 가운데로.
+   열은 아래 aps-badge-col 스크립트가 표를 그린 뒤 찾아 aps-bc 를 붙인다. 폰(767px 이하) 카드형 목록은 건드리지 않음 */
+@media (min-width:768px){th.aps-bc,td.aps-bc{text-align:center!important}}
+</style>
+<script id="aps-badge-col-js">
+/* 배지 열 가운데 맞춤(11-06) — 시스템마다 배지 만드는 방식(class · 인라인 style · 함수)이 달라, 그려진 표를 보고 판단한다.
+   배지 = 칸 안에 글자 없이 하나뿐인 둥근 꼬리표(배경 또는 테두리). 입력칸 · 단추 · 링크 · 그림은 배지로 보지 않는다.
+   한 열의 값 있는 칸(앞 40줄) 중 60% 이상이 배지면 그 열의 머리글 · 칸에 aps-bc. 표 내용이 바뀔 때마다 다시 본다(class 만 바꾸므로 되돌아 부르지 않음). */
+(function () {
+  'use strict';
+  var SKIP = /^(INPUT|SELECT|TEXTAREA|BUTTON|A|IMG|SVG|CANVAS)$/i;
+  function isBadge(el) {
+    if (!el || SKIP.test(el.tagName)) return false;
+    var cs = getComputedStyle(el);
+    if (!/inline/.test(cs.display) || (parseFloat(cs.borderTopLeftRadius) || 0) < 2) return false;
+    var bg = cs.backgroundColor;
+    return (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') || (parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none');
+  }
+  function badgeCell(td) {             // null = 빈 칸(세지 않음) · true / false
+    var t = (td.textContent || '').trim();
+    if (!t || t === '-') return null;
+    if (td.children.length !== 1) return false;
+    var b = td.children[0];
+    return isBadge(b) && (b.textContent || '').trim() === t;
+  }
+  function mark(table) {
+    var head = table.tHead && table.tHead.rows[table.tHead.rows.length - 1], body = table.tBodies[0];
+    if (!head || !body) return;
+    var all = body.rows, rows = [];
+    for (var i = 0; i < all.length && rows.length < 40; i++) { var ok = true; for (var c = 0; c < all[i].cells.length; c++) if (all[i].cells[c].colSpan > 1) { ok = false; break; } if (ok) rows.push(all[i]); }
+    if (!rows.length) return;
+    for (var j = 0; j < head.cells.length; j++) {
+      if (head.cells[j].colSpan > 1) return;  // 머리글에 합친 칸이 있으면 그 뒤 열 번호가 어긋나므로 멈춤
+      var yes = 0, n = 0;
+      for (var r = 0; r < rows.length; r++) { var td = rows[r].cells[j]; if (!td) continue; var v = badgeCell(td); if (v === null) continue; n++; if (v) yes++; }
+      var on = n > 0 && yes / n >= 0.6;
+      head.cells[j].classList.toggle('aps-bc', on);
+      for (var k = 0; k < all.length; k++) { var cell = all[k].cells[j]; if (cell && cell.colSpan === 1) cell.classList.toggle('aps-bc', on); }
+    }
+  }
+  var queued = false;
+  function run() { queued = false; var ts = document.getElementsByTagName('table'); for (var i = 0; i < ts.length; i++) { try { mark(ts[i]); } catch (e) {} } }
+  function schedule() { if (!queued) { queued = true; (window.requestAnimationFrame || setTimeout)(run); } }
+  try {
+    new MutationObserver(function (ms) {
+      for (var i = 0; i < ms.length; i++) {
+        var t = ms[i].target;
+        if ((t.closest && t.closest('table')) || (t.getElementsByTagName && t.getElementsByTagName('table').length)) { schedule(); return; }
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  } catch (e) {}
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', schedule); else schedule();
+})();
+</script>
 </body>
 </html>
