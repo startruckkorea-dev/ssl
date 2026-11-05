@@ -458,6 +458,9 @@ body.rd-rule .appr-line-preview.rd-only{display:block}
 .det-val{color:#323130;font-weight:400;flex:1;word-break:break-word}
 .appr-item{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 10px;border-bottom:1px solid #edebe9;font-size:13px;gap:10px}
 .appr-item:last-child{border-bottom:none}
+/* 11-05 결재 이력 — 의견에 띄어쓰기 없는 긴 글(공유 폴더 주소 등)이 있어도 칸 안에서 줄을 바꾸고, 오른쪽 상태(승인 · 대기 …)가 밀려나지 않게(모든 화면 폭 · PDF 포함) */
+.appr-item>div:first-child{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.appr-item>:last-child:not(:first-child){flex:none;white-space:nowrap}
 .status-대기{color:#7d5700;font-weight:600}
 .status-승인{color:#107c10;font-weight:600}
 .status-반려{color:#a4262c;font-weight:600}
